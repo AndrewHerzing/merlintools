@@ -11,6 +11,7 @@ setup(
             'hyperspy',
             'fpd',
             'pyxem',
+            'tqdm',
             ],
     author = 'Andrew Herzing',
     author_email = 'andrew.herzing@nist.gov',

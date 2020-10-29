@@ -4,6 +4,7 @@ import hyperspy.api as hs
 from fpd.fpd_file import MerlinBinary
 import glob
 import pyxem as pxm
+import tqdm
 
 def sort_mibs(filename_list):
     key_list = []
@@ -53,7 +54,8 @@ def parse_hdr(hdrfile):
         header['SoftwareVersion'] = h.readlines(1)[0].rstrip().split(':\t')[1]
         return header
     
-def get_merlin_data(merlin_datapath, dmfilename=None, scanX=None, scanY=None, use_fpd=True):
+def get_merlin_data(merlin_datapath, dmfilename=None, scanX=None, scanY=None,
+                    use_fpd=True, show_progressbar=True):
     # If a DM file is provided, use it to extract the scan shape.
     # Otherwise, use scanX and scanY for scan shape.
     if dmfilename:
@@ -81,13 +83,14 @@ def get_merlin_data(merlin_datapath, dmfilename=None, scanX=None, scanY=None, us
         for i in range(0, 10):
             exposures[i] = get_acquisition_time(mibfiles[i])
         skip_frames = np.argmax(exposures) + 1
-        extra_frames = len(exposures[skip_frames:]) - nframes
+        extra_frames = len(mibfiles[skip_frames:]) - nframes
 
         data = MerlinBinary(binfns=mibfiles,
-                        hdrfn=hdrfile,
-                        dmfns = [dmfilename,],
-                        ds_start_skip=skip_frames,
-                        row_end_skip=0)
+                            hdrfn=hdrfile,
+                            dmfns = [dmfilename,],
+                            ds_start_skip=skip_frames,
+                            row_end_skip=0,
+                            sort_binary_file_list=False)
         data = data.to_array()
 
     # Read data using NumPy
@@ -107,16 +110,16 @@ def get_merlin_data(merlin_datapath, dmfilename=None, scanX=None, scanY=None, us
         for i in range(0, 10):
             exposures[i] = get_acquisition_time(mibfiles[i])
         skip_frames = np.argmax(exposures) + 1
-        extra_frames = len(exposures[skip_frames:]) - nframes
+        extra_frames = len(mibfiles[skip_frames:]) - nframes
 
         data = np.zeros([nframes,256**2], data_type)
-        for i in range(0, nframes):
+        for i in tqdm.tqdm(range(0, nframes), disable=(not show_progressbar)):
             h = open(mibfiles[i+skip_frames], 'rb')
             data[i,:] = np.fromfile(h, dtype=data_type, offset=384)
             h.close()
         data = data.reshape([scanX, scanY, 256, 256])
 
-        print('\nMerlin path: %s' % merlin_datapath)
+        print('Merlin path: /%s' % merlin_datapath)
         print('DM File: %s' % dmfilename)
         print('Number of .MIB files: %s' % len(mibfiles))
         print('Header file: %s' % hdrfile)
