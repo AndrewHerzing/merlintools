@@ -53,7 +53,9 @@ def parse_hdr(hdrfile):
         header['SoftwareVersion'] = h.readlines(1)[0].rstrip().split(':\t')[1]
         return header
     
-def get_merlin_data(merlin_datapath, dmfilename=None, scanX=None, scanY=None, verbose=False):
+def get_merlin_data(merlin_datapath, dmfilename=None, scanX=None, scanY=None, use_fpd=True):
+    # If a DM file is provided, use it to extract the scan shape.
+    # Otherwise, use scanX and scanY for scan shape.
     if dmfilename:
         dm = hs.load(dmfilename)
         nframes = dm.data.ravel().shape[0]
@@ -66,33 +68,54 @@ def get_merlin_data(merlin_datapath, dmfilename=None, scanX=None, scanY=None, ve
             raise ValueError('If no DM file is provided, then scanX and scanY must be defined!')
         nframes = scanX*scanY
     
+    # Get relevant filenames
     hdrfile = glob.glob(merlin_datapath + '*.hdr')[0]
     mibfiles = glob.glob(merlin_datapath + '*.mib')
     mibfiles = sort_mibs(mibfiles)
-    hdr = parse_hdr(hdrfile)
-    if hdr['CounterDepth'] == '6' or hdr['CounterDepth']=='1':
-        data_type = np.uint8
-    elif hdr['CounterDepth'] == '12':
-        data_type = np.uint16
-    elif hdr['CounterDepth'] == '24':
-        data_type = np.uint32
-    exposures = np.zeros(10)
-    for i in range(0, 10):
-        exposures[i] = get_acquisition_time(mibfiles[i])
-    skip_frames = np.argmax(exposures) + 1
-    extra_frames = len(exposures[skip_frames:]) - nframes
-    data = np.zeros([nframes,256**2], data_type)
-    for i in range(0, nframes):
-        h = open(mibfiles[i+skip_frames], 'rb')
-        data[i,:] = np.fromfile(h, dtype=data_type, offset=384)
-        h.close()
-    data = data.reshape([scanX, scanY, 256, 256])
-    data = pxm.ElectronDiffraction2D(data)
-    
-    if dmfilename:
-        data.set_scan_calibration(scan_calibration)
 
-    if verbose:
+    # Read data using the fpd module
+    if use_fpd:
+        # Use exposure times to determine the number of extra frames at
+        # the beginning and end of the dataset.
+        exposures = np.zeros(10)
+        for i in range(0, 10):
+            exposures[i] = get_acquisition_time(mibfiles[i])
+        skip_frames = np.argmax(exposures) + 1
+        extra_frames = len(exposures[skip_frames:]) - nframes
+
+        data = MerlinBinary(binfns=mibfiles,
+                        hdrfn=hdrfile,
+                        dmfns = [dmfilename,],
+                        ds_start_skip=skip_frames,
+                        row_end_skip=0)
+        data = data.to_array()
+
+    # Read data using NumPy
+    else:
+        # Parse the header file to determine the counter depth.
+        hdr = parse_hdr(hdrfile)
+        if hdr['CounterDepth'] == '6' or hdr['CounterDepth']=='1':
+            data_type = np.uint8
+        elif hdr['CounterDepth'] == '12':
+            data_type = np.uint16
+        elif hdr['CounterDepth'] == '24':
+            data_type = np.uint32
+        
+        # Use exposure times to determine the number of extra frames at
+        # the beginning and end of the dataset.
+        exposures = np.zeros(10)
+        for i in range(0, 10):
+            exposures[i] = get_acquisition_time(mibfiles[i])
+        skip_frames = np.argmax(exposures) + 1
+        extra_frames = len(exposures[skip_frames:]) - nframes
+
+        data = np.zeros([nframes,256**2], data_type)
+        for i in range(0, nframes):
+            h = open(mibfiles[i+skip_frames], 'rb')
+            data[i,:] = np.fromfile(h, dtype=data_type, offset=384)
+            h.close()
+        data = data.reshape([scanX, scanY, 256, 256])
+
         print('\nMerlin path: %s' % merlin_datapath)
         print('DM File: %s' % dmfilename)
         print('Number of .MIB files: %s' % len(mibfiles))
@@ -100,4 +123,17 @@ def get_merlin_data(merlin_datapath, dmfilename=None, scanX=None, scanY=None, ve
         print('Extra frames at beginning of scan: %s' % skip_frames)
         print('Extra frames at end of scan: %s' % extra_frames)
         print('Resulting data shape: %s' % str(data.data.shape))
+
+    # Convert data to a PyXem ElectronDiffractoin2D signal
+    data = pxm.ElectronDiffraction2D(data)
+    
+    # Set the spatial calibration using the DM file.  If no DM file is provided,
+    # the calibration is set to 1.0 nm.
+    if dmfilename:
+        data.set_scan_calibration(scan_calibration)
+    else:
+        data.set_scan_calibration(1.0)
+    
+    # Diffraction calibration is set to 1.0 A^-1
+    data.set_diffraction_calibration(1.0)
     return data
