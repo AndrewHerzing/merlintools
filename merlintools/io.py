@@ -20,39 +20,6 @@ def get_acquisition_time(filename):
         line = h.readline(200)
     return np.float32(line.split(',')[10])*1000
 
-# def get_with_dmfile(datapath, verbose=False):
-#     merlin_path, dmfile, hdrfile, mibfiles = get_files(datapath)
-#     mibfiles = sort_mibs(mibfiles)
-
-#     dm = hs.load(dmfile)
-#     dm_rows, dm_cols = dm.data.shape
-    
-#     nfiles = dm_cols * 3
-
-#     frame_times = np.zeros(nfiles)
-#     for i in range(0,nfiles):
-#         frame_times[i] = get_acquisition_time(mibfiles[i])
-        
-#     skip_frames = np.argmax(frame_times[0:np.int32(dm_cols/2)]) + 1
-#     extra_frames = len(mibfiles) - dm_cols*dm_rows - skip_frames
-    
-#     s = MerlinBinary(binfns=mibfiles,
-#                      hdrfn=hdrfile,
-#                      dmfns = [dmfile,],
-#                      ds_start_skip=skip_frames,
-#                      row_end_skip=0)
-#     if verbose:
-#         print('\nRoot path: %s' % datapath)
-#         print('DM File: %s' % dmfile)
-#         print('Merlin path: %s' % merlin_path)
-#         print('Number of .MIB files: %s' % len(mibfiles))
-#         print('Header file: %s' % hdrfile)
-#         print('Extra frames at beginning of scan: %s' % skip_frames)
-#         print('Extra frames at end of scan: %s' % extra_frames)
-#         print('Resulting data shape: %s' % str(s.shape))
-    
-#     return s
-
 def parse_hdr(hdrfile):
     header = {}
     with open(hdrfile, 'r') as h:
@@ -86,10 +53,19 @@ def parse_hdr(hdrfile):
         header['SoftwareVersion'] = h.readlines(1)[0].rstrip().split(':\t')[1]
         return header
     
-def get_merlin_data(merlin_datapath, dmfilename):
-    dm = hs.load(dmfilename)
-    nframes = dm.data.ravel().shape[0]
-    scanX, scanY = dm.data.shape
+def get_merlin_data(merlin_datapath, dmfilename=None, scanX=None, scanY=None, verbose=False):
+    if dmfilename:
+        dm = hs.load(dmfilename)
+        nframes = dm.data.ravel().shape[0]
+        scanX, scanY = dm.data.shape
+        scan_calibration = dm.axes_manager[0].scale
+        if dm.axes_manager[0].units.lower() != 'nm':
+            scan_calibration = scan_calibration * 1000
+    else:
+        if scanX is None or scanY is None:
+            raise ValueError('If no DM file is provided, then scanX and scanY must be defined!')
+        nframes = scanX*scanY
+    
     hdrfile = glob.glob(merlin_datapath + '*.hdr')[0]
     mibfiles = glob.glob(merlin_datapath + '*.mib')
     mibfiles = sort_mibs(mibfiles)
@@ -104,7 +80,7 @@ def get_merlin_data(merlin_datapath, dmfilename):
     for i in range(0, 10):
         exposures[i] = get_acquisition_time(mibfiles[i])
     skip_frames = np.argmax(exposures) + 1
-    # extra_frames = len(exposures[skip_frames:]) - nframes
+    extra_frames = len(exposures[skip_frames:]) - nframes
     data = np.zeros([nframes,256**2], data_type)
     for i in range(0, nframes):
         h = open(mibfiles[i+skip_frames], 'rb')
@@ -112,4 +88,16 @@ def get_merlin_data(merlin_datapath, dmfilename):
         h.close()
     data = data.reshape([scanX, scanY, 256, 256])
     data = pxm.ElectronDiffraction2D(data)
+    
+    if dmfilename:
+        data.set_scan_calibration(scan_calibration)
+
+    if verbose:
+        print('\nMerlin path: %s' % merlin_datapath)
+        print('DM File: %s' % dmfilename)
+        print('Number of .MIB files: %s' % len(mibfiles))
+        print('Header file: %s' % hdrfile)
+        print('Extra frames at beginning of scan: %s' % skip_frames)
+        print('Extra frames at end of scan: %s' % extra_frames)
+        print('Resulting data shape: %s' % str(data.data.shape))
     return data
