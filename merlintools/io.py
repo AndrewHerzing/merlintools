@@ -216,7 +216,7 @@ def get_merlin_data(mibfiles, hdrfile, dmfile=None, skip_frames=None, scanX=None
                     else:
                         data[i-skip_frames,:] = np.fromfile(h, dtype=data_type, count=256**2, offset=384)
 
-        data = data.reshape([scanX[0], scanY[0], 256, 256])
+        data = data.reshape([scanY[0], scanX[0], 256, 256])
 
     # Convert data to a PyXem ElectronDiffractoin2D signal
     data = pxm.ElectronDiffraction2D(data)
