@@ -18,6 +18,10 @@ def sort_mibs(filename_list):
     return sorted_list
 
 def get_exposure_times(mibfiles, n=10):
+    # If n is not provided, get number of frames from the filesize and read all exposures
+    if n is None:
+        n = int(os.path.getsize(mibfiles) / (2*(256**2) + 384))
+
     if type(mibfiles) is list and len(mibfiles) > 1:
         exposures = np.zeros(n)
         for i in range(0, n):
