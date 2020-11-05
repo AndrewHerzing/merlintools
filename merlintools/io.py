@@ -176,8 +176,8 @@ def get_merlin_data(mibfiles, hdrfile, dmfile=None, skip_frames=None, scanX=None
         nframes = scanX[0] * scanY[0]
     else:
         nframes = int(total_frames - skip_frames)
-        scanX = [nframes, 'x', 'pixels']
-        scanY = [1, 'y', 'pixels']
+        scanX = [1, 'x', 'pixels']
+        scanY = [nframes, 'y', 'pixels']
     
     extra_frames = total_frames - nframes - skip_frames
     # logger.info("%i extra frames detected at end of dataset" % extra_frames)
@@ -185,7 +185,7 @@ def get_merlin_data(mibfiles, hdrfile, dmfile=None, skip_frames=None, scanX=None
     if exposures.shape[0] != scanX[0]*scanY[0]:
         missing_frames = scanX[0]*scanY[0] - exposures.shape[0]
         exposures = np.append(exposures, np.zeros(missing_frames))
-    exposures = Signal2D(np.reshape(exposures, [scanX[0], scanY[0]]))
+    exposures = Signal2D(np.reshape(exposures, [scanY[0], scanX[0]]))
 
     logger.info('DM file: %s' % dmfile)
     logger.info('Header file: %s' % hdrfile)
