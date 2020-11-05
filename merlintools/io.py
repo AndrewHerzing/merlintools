@@ -176,8 +176,8 @@ def get_merlin_data(mibfiles, hdrfile, dmfile=None, skip_frames=None, scanX=None
         nframes = scanX[0] * scanY[0]
     else:
         nframes = int(total_frames - skip_frames)
-        scanX = [1, 'x', 'pixels']
-        scanY = [nframes, 'y', 'pixels']
+        scanX = [nframes, 'x', 'pixels']
+        scanY = [1, 'y', 'pixels']
     
     extra_frames = total_frames - nframes - skip_frames
     # logger.info("%i extra frames detected at end of dataset" % extra_frames)

@@ -36,7 +36,7 @@ class TestReadMIB:
                                            use_fpd=False, show_progressbar=False)
         assert type(s) is ElectronDiffraction2D
         assert s.axes_manager.signal_shape == (256, 256)
-        assert s.axes_manager.navigation_shape == (1, 404)
+        assert s.axes_manager.navigation_shape == (404, 1)
     
     def test_load_mib_no_dm_fpd(self):
         mibfile = os.path.join(merlin_path, "tests", "test_data", "merlin.mib")
@@ -45,7 +45,7 @@ class TestReadMIB:
                                            use_fpd=True, show_progressbar=False)
         assert type(s) is ElectronDiffraction2D
         assert s.axes_manager.signal_shape == (256, 256)
-        assert s.axes_manager.navigation_shape == (1, 404)
+        assert s.axes_manager.navigation_shape == (404, 1)
     
     def test_load_mib_manual_scan(self):
 
