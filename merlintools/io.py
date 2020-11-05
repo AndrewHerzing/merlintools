@@ -173,6 +173,9 @@ def get_merlin_data(mibfiles, hdrfile, dmfile=None, skip_frames=None, scanX=None
     
     extra_frames = total_frames - nframes - skip_frames
     exposures = exposures[:-extra_frames]
+    if exposures.shape[0] != scanX[0]*scanY[0]:
+        missing_frames = scanX[0]*scanY[0] - exposures.shape[0]
+        exposures = np.append(exposures, np.zeros(missing_frames))
     exposures = Signal2D(np.reshape(exposures, [scanX[0], scanY[0]]))
 
     if not use_fpd:
