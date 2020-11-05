@@ -36,7 +36,7 @@ class TestReadMIB:
                                            use_fpd=False, show_progressbar=False)
         assert type(s) is ElectronDiffraction2D
         assert s.axes_manager.signal_shape == (256, 256)
-        assert s.axes_manager.navigation_shape == (405, 1)
+        assert s.axes_manager.navigation_shape == (404, 1)
     
     def test_load_mib_no_dm_fpd(self):
         mibfile = os.path.join(merlin_path, "tests", "test_data", "merlin.mib")
@@ -45,7 +45,7 @@ class TestReadMIB:
                                            use_fpd=True, show_progressbar=False)
         assert type(s) is ElectronDiffraction2D
         assert s.axes_manager.signal_shape == (256, 256)
-        assert s.axes_manager.navigation_shape == (405, 1)
+        assert s.axes_manager.navigation_shape == (404, 1)
     
     def test_load_mib_manual_scan(self):
 
@@ -68,20 +68,20 @@ class TestReadMIB:
         assert s.axes_manager.signal_shape == (256, 256)
         assert s.axes_manager.navigation_shape == (20, 20)
 
-    class TestHeaderParsing:
+class TestHeaderParsing:
 
-        def test_hdr_parser(self):
-            hdrfile = os.path.join(merlin_path, "tests", "test_data", "merlin.hdr")
-            header = merlintools.io.parse_hdr(hdrfile)
-            assert type(header) is dict
-            assert 'TimeStamp' in header.keys()
-            assert 'SoftwareVersion' in header.keys()
-            assert np.int(header['TotalFrames']) == 11007
-        
-        def test_mib_parser(self):
-            mibfile = os.path.join(merlin_path, "tests", "test_data", "merlin.mib")
-            header = merlintools.io.parse_mib_header(mibfile)
-            assert type(header) is dict
-            assert 'HeaderID' in header.keys()
-            assert 'ExtCounterDepth' in header.keys()
-            assert header['DataOffset'] == 384
+    def test_hdr_parser(self):
+        hdrfile = os.path.join(merlin_path, "tests", "test_data", "merlin.hdr")
+        header = merlintools.io.parse_hdr(hdrfile)
+        assert type(header) is dict
+        assert 'TimeStamp' in header.keys()
+        assert 'SoftwareVersion' in header.keys()
+        assert np.int(header['TotalFrames']) == 11007
+    
+    def test_mib_parser(self):
+        mibfile = os.path.join(merlin_path, "tests", "test_data", "merlin.mib")
+        header = merlintools.io.parse_mib_header(mibfile)
+        assert type(header) is dict
+        assert 'HeaderID' in header.keys()
+        assert 'ExtCounterDepth' in header.keys()
+        assert header['DataOffset'] == 384

@@ -7,6 +7,10 @@ import glob
 import pyxem as pxm
 import tqdm
 import os
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 def sort_mibs(filename_list):
     key_list = []
@@ -138,12 +142,14 @@ def get_merlin_data(mibfiles, hdrfile, dmfile=None, skip_frames=None, scanX=None
     hdr = parse_hdr(hdrfile)
 
     # Get exposure times from MIB file(s)
+    logger.info("Reading exposure times from MIB files")
     exposures = get_exposure_times(mibfiles)
     
     # Use exposure times to determine the number of extra frames at
     # the beginning and end of the dataset.
     if skip_frames is None:
         skip_frames = np.argmax(exposures[0:10]) + 1
+        # logger.info("%i extra frames found at beginning of dataset based on expsosure times" % skip_frames)
     exposures = exposures[skip_frames:]
 
     # Determine total number of frames. If a list of .mib files is provided, 
@@ -154,6 +160,7 @@ def get_merlin_data(mibfiles, hdrfile, dmfile=None, skip_frames=None, scanX=None
         total_frames = len(mibfiles)
     else:
         total_frames = int(os.path.getsize(mibfiles) / (2*(256**2) + 384))
+        # logger.info("%i total frames based on size of MIB file" % total_frames)
 
     # Determine scan parameters.
     if dmfile:
@@ -163,6 +170,7 @@ def get_merlin_data(mibfiles, hdrfile, dmfile=None, skip_frames=None, scanX=None
         scanY = [dm.data.shape[1], 'y', 'nm']
         scan_calibration = dm.axes_manager[0].scale
         if dm.axes_manager[0].units.lower() != 'nm':
+            logger.info("Changing DM calibration from microns to nanometers")
             scan_calibration = scan_calibration * 1000
     elif type(scanX) is list:
         nframes = scanX[0] * scanY[0]
@@ -172,21 +180,19 @@ def get_merlin_data(mibfiles, hdrfile, dmfile=None, skip_frames=None, scanX=None
         scanY = [1, 'y', 'pixels']
     
     extra_frames = total_frames - nframes - skip_frames
+    # logger.info("%i extra frames detected at end of dataset" % extra_frames)
     exposures = exposures[:-extra_frames]
     if exposures.shape[0] != scanX[0]*scanY[0]:
         missing_frames = scanX[0]*scanY[0] - exposures.shape[0]
         exposures = np.append(exposures, np.zeros(missing_frames))
     exposures = Signal2D(np.reshape(exposures, [scanX[0], scanY[0]]))
 
-    if not use_fpd:
-        if type(mibfiles) is list:
-            print('MIB')
-        print('DM file: %s' % dmfile)
-        print('Header file: %s' % hdrfile)
-        print('Total number of frames: %s' % total_frames)
-        print('Extra frames at beginning of scan: %s' % skip_frames)
-        print('Extra frames at end of scan: %s' % extra_frames)
-        print('Resulting data shape: [%s, %s, %s, %s]' % (scanX[0], scanY[0], 256, 256))
+    logger.info('DM file: %s' % dmfile)
+    logger.info('Header file: %s' % hdrfile)
+    logger.info('Total number of frames: %s' % total_frames)
+    logger.info('Extra frames at beginning of scan: %s' % skip_frames)
+    logger.info('Extra frames at end of scan: %s' % extra_frames)
+    logger.info('Resulting data shape: [%s, %s, %s, %s]' % (scanX[0], scanY[0], 256, 256))
 
     # Read data using the fpd module
     if use_fpd:
