@@ -1,6 +1,7 @@
 import re
 import numpy as np
 import hyperspy.api as hs
+from hyperspy.signals import Signal2D # pylint: disable=no-name-in-module
 from fpd.fpd_file import MerlinBinary
 import glob
 import pyxem as pxm
@@ -17,7 +18,7 @@ def sort_mibs(filename_list):
     sorted_list = [filename_list for (key_list, filename_list) in sorted(zip(key_list,filename_list))]
     return sorted_list
 
-def get_exposure_times(mibfiles, n=10):
+def get_exposure_times(mibfiles, n=None):
     if type(mibfiles) is list and len(mibfiles) > 1:
         # If n is not provided, get number of frames from the filesize and read all exposures
         if n is None:
@@ -133,12 +134,17 @@ def parse_mib_header(mibfile):
 
 def get_merlin_data(mibfiles, hdrfile, dmfile=None, skip_frames=None, scanX=None, scanY=None,
                     use_fpd=True, scan_calibration=1.0, show_progressbar=True):
+    # Read info from HDR file
+    hdr = parse_hdr(hdrfile)
 
+    # Get exposure times from MIB file(s)
+    exposures = get_exposure_times(mibfiles)
+    
     # Use exposure times to determine the number of extra frames at
     # the beginning and end of the dataset.
     if skip_frames is None:
-        exposures = get_exposure_times(mibfiles)
-        skip_frames = np.argmax(exposures)
+        skip_frames = np.argmax(exposures[0:10]) + 1
+    exposures = exposures[skip_frames:]
 
     # Determine total number of frames. If a list of .mib files is provided, 
     # the total number of frames is simply the number of files. If a single .mib
@@ -166,7 +172,9 @@ def get_merlin_data(mibfiles, hdrfile, dmfile=None, skip_frames=None, scanX=None
         scanY = [1, 'y', 'pixels']
     
     extra_frames = total_frames - nframes - skip_frames
-    
+    exposures = exposures[:-extra_frames]
+    exposures = Signal2D(np.reshape(exposures, [scanX[0], scanY[0]]))
+
     if not use_fpd:
         if type(mibfiles) is list:
             print('MIB')
@@ -200,7 +208,6 @@ def get_merlin_data(mibfiles, hdrfile, dmfile=None, skip_frames=None, scanX=None
     # Read data using NumPy
     else:
         # Parse the header file to determine the counter depth.
-        hdr = parse_hdr(hdrfile)
         if hdr['CounterDepth'] == '6' or hdr['CounterDepth']=='1':
             data_type = np.uint8
         elif hdr['CounterDepth'] == '12':
@@ -233,4 +240,13 @@ def get_merlin_data(mibfiles, hdrfile, dmfile=None, skip_frames=None, scanX=None
     
     # Diffraction calibration is set to 1.0 A^-1
     data.set_diffraction_calibration(1.0)
+
+    # Populate metadata
+    if dmfile:
+        for i in dm.metadata.Acquisition_instrument.TEM:
+            data.metadata.set_item("Acquisition_instrument.TEM." + i[0],
+                                   dm.metadata.get_item("Acquisition_instrument.TEM." + i[0]))
+    for i in hdr:
+        data.metadata.set_item("Acquisition_instrument.Merlin." + i, hdr[i])
+    data.metadata.set_item("Acquisition_instrument.Merlin.exposures", exposures)
     return data
