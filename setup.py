@@ -5,7 +5,7 @@ setup(
     version='0.1dev',
     packages=['merlintools',],
     description='Handle 4D-STEM data collected with a Merlin detector.',
-    long_description=open('README.txt').read(),
+    long_description=open('README.md').read(),
     install_requires = [
             'numpy',
             'hyperspy',
