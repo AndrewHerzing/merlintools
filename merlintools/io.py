@@ -13,6 +13,21 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 def sort_mibs(filename_list):
+    """
+    Sort a list of MIB file names by frame number.
+
+    Args
+    ----------
+    filename_list : List
+        A list of MIB files to sort
+
+    Returns
+    ----------
+    sorted_list : List
+        A list of MIB files sorted by frame number
+
+    """
+
     key_list = []
     
     for filename in filename_list:
@@ -23,6 +38,21 @@ def sort_mibs(filename_list):
     return sorted_list
 
 def get_exposure_times(mibfiles, n=None):
+    """
+    Extract the exposure time for each frame from MIB file header(s).
+
+    Args
+    ----------
+    mibfiles : List
+        A list of MIB files to inspect
+
+    Returns
+    ----------
+    expsoures : NumPy array
+        The exposure time, in seconds, for each frame in the dataset
+
+    """
+
     if type(mibfiles) is list and len(mibfiles) > 1:
         # If n is not provided, get number of frames from the filesize and read all exposures
         if n is None:
@@ -46,6 +76,21 @@ def get_exposure_times(mibfiles, n=None):
     return exposures
 
 def parse_hdr(hdrfile):
+    """
+    Extract all information from a HDR file.
+
+    Args
+    ----------
+    hdrfile : str
+        HDR file to parse
+
+    Returns
+    ----------
+    header : dict
+        Extracted header information
+
+    """
+
     header = {}
     with open(hdrfile, 'r') as h:
         _ = h.readlines(1)[0].rstrip()
@@ -79,6 +124,20 @@ def parse_hdr(hdrfile):
         return header
 
 def parse_mib_header(mibfile):
+    """
+    Extract header information from a MIB file.
+
+    Args
+    ----------
+    mibfile : str
+        MIB file to parse
+
+    Returns
+    ----------
+    mib_hdr : dict
+        Extracted header information
+
+    """
     mib_hdr = {}
     with open(mibfile, 'r') as h:
         hdr_temp = np.fromfile(h, 'int8', 384)
@@ -138,6 +197,44 @@ def parse_mib_header(mibfile):
 
 def get_merlin_data(mibfiles, hdrfile, dmfile=None, skip_frames=None, scanX=None, scanY=None,
                     use_fpd=True, scan_calibration=1.0, show_progressbar=True):
+    """
+    Read data from a 4D-STEM dataset.
+
+    Args
+    ----------
+    mibfiles : list or string
+        MIB filename or a list of filenames
+    hdrfile : string
+        HDR filename
+    dmfile : string
+        Digital Micrograph (DM) file associated with the 4D-STEM dataset.  If provided, 
+        image scan shape will be determined using the DM file.  If not provided, this
+        info will need to manually provided using scanX and scanY.
+    scanX : list
+        List of the form [scan_size, axis_name, units] giving information regarding the
+        horizonatal axis of the scan. scan_size is an integer, while axis_name and units
+        are both strings.
+    scanY : list
+        List of the form [scan_size, axis_name, units] giving information regarding the
+        vertical axis of the scan. scan_size is an integer, while axis_name and units
+        are both strings.
+    use_fpd : boolean
+        If True (default), use the fpd package's MerlinBinary class to read the data.
+        If False, the data will be read NumPy's fromfile function.  Using fpd is faster and
+        preferred in most cases.  The other option is included in case fpd has trouble with
+        the dataset for one reason or another.
+    scan_calibration : float
+        If no DM file is provided, the pixel size of the scan axes can be manually entered.
+    use_progressbar : boolean
+        If True, show a progress bar during data processing.  Otherwise, do not show.
+
+    Returns
+    ----------
+    data : ElectronDiffraction2D
+        A pyXem ElectronDiffraction2D signal.
+
+    """
+
     # Read info from HDR file
     hdr = parse_hdr(hdrfile)
 
