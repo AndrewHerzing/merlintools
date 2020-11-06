@@ -67,3 +67,5 @@ Related projects
 http://hyperspy.org/
 
 https://pyxem.github.io/pyxem-website/
+
+https://fpdpy.gitlab.io/fpd/
