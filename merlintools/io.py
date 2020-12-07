@@ -66,17 +66,30 @@ def get_exposure_times(mibfiles, n=None):
                 line = h.readline(200)
             exposures[i] = np.float32(line.split(',')[10])*1000
     else:
+        with open(mibfiles, 'rb') as h:
+            hdr_temp = np.fromfile(h, 'int8', 384)
+        hdr_temp = ''.join([chr(item) for item in hdr_temp]).split(',')
+        data_type = hdr_temp[6]
+        if data_type == 'U32':
+            dtype = 'uint32'
+            data_length = 4
+        elif data_type == 'U16':
+            dtype = 'uint16'
+            data_length = 2
+        else:
+            dtype = 'uint8'
+            data_length = 1
         # If n is not provided, get number of frames from the filesize
         # and read all exposures
         if n is None:
-            n = int(os.path.getsize(mibfiles) / (2*(256**2) + 384))
+            n = int(os.path.getsize(mibfiles) / (data_length*(256**2) + 384))
         exposures = np.zeros(n)
         with open(mibfiles, 'rb') as h:
             for i in range(0, n):
                 hdr_temp = np.fromfile(h, 'int8', 384)
                 hdr_temp = ''.join([chr(item) for item in hdr_temp]).split(',')
                 exposures[i] = hdr_temp[10]
-                _ = np.fromfile(h, np.uint16, 256**2)
+                _ = np.fromfile(h, dtype, 256**2)
     return exposures
 
 
