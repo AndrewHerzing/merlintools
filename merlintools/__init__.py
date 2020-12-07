@@ -1,1 +1,1 @@
-from . import io
+from . import io  # noqa: F401

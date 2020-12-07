@@ -1,9 +1,8 @@
 import re
 import numpy as np
 import hyperspy.api as hs
-from hyperspy.signals import Signal2D # pylint: disable=no-name-in-module
+from hyperspy.signals import Signal2D
 from fpd.fpd_file import MerlinBinary
-import glob
 import pyxem as pxm
 import tqdm
 import os
@@ -11,6 +10,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
 
 def sort_mibs(filename_list):
     """
@@ -29,13 +29,15 @@ def sort_mibs(filename_list):
     """
 
     key_list = []
-    
+
     for filename in filename_list:
         root_name = filename.split(".")[-2]
-        key_list.append(int(re.search(r'\d+',root_name[::-1]).group()[::-1]))
+        key_list.append(int(re.search(r'\d+', root_name[::-1]).group()[::-1]))
 
-    sorted_list = [filename_list for (key_list, filename_list) in sorted(zip(key_list,filename_list))]
+    sorted_list = [filename_list for (key_list, filename_list)
+                   in sorted(zip(key_list, filename_list))]
     return sorted_list
+
 
 def get_exposure_times(mibfiles, n=None):
     """
@@ -54,7 +56,8 @@ def get_exposure_times(mibfiles, n=None):
     """
 
     if type(mibfiles) is list and len(mibfiles) > 1:
-        # If n is not provided, get number of frames from the filesize and read all exposures
+        # If n is not provided, get number of frames from the filesize
+        # and read all exposures
         if n is None:
             n = len(mibfiles)
         exposures = np.zeros(n)
@@ -63,17 +66,19 @@ def get_exposure_times(mibfiles, n=None):
                 line = h.readline(200)
             exposures[i] = np.float32(line.split(',')[10])*1000
     else:
-        # If n is not provided, get number of frames from the filesize and read all exposures
+        # If n is not provided, get number of frames from the filesize
+        # and read all exposures
         if n is None:
             n = int(os.path.getsize(mibfiles) / (2*(256**2) + 384))
         exposures = np.zeros(n)
-        with open(mibfiles,'rb') as h:    
+        with open(mibfiles, 'rb') as h:
             for i in range(0, n):
                 hdr_temp = np.fromfile(h, 'int8', 384)
                 hdr_temp = ''.join([chr(item) for item in hdr_temp]).split(',')
                 exposures[i] = hdr_temp[10]
                 _ = np.fromfile(h, np.uint16, 256**2)
     return exposures
+
 
 def parse_hdr(hdrfile):
     """
@@ -122,6 +127,7 @@ def parse_hdr(hdrfile):
         header['Readout'] = h.readlines(1)[0].rstrip().split(':\t')[1]
         header['SoftwareVersion'] = h.readlines(1)[0].rstrip().split(':\t')[1]
         return header
+
 
 def parse_mib_header(mibfile):
     """
@@ -195,10 +201,13 @@ def parse_mib_header(mibfile):
     mib_hdr['ExtCounterDepth'] = np.uint8(hdr_temp[53])
     return mib_hdr
 
-def get_merlin_data(mibfiles, hdrfile, dmfile=None, skip_frames=None, scanX=None, scanY=None,
-                    use_fpd=True, scan_calibration=1.0, show_progressbar=True):
+
+def get_merlin_data(mibfiles, hdrfile, dmfile=None, skip_frames=None,
+                    scanX=None, scanY=None, use_fpd=True,
+                    scan_calibration=1.0, show_progressbar=True):
     """
-    Read data from a 4D-STEM dataset.
+    Read data from a 4D-STEM dataset.  If a Digital Micrograph (DM) file is
+    provided, the scan shape .
 
     Args
     ----------
@@ -207,26 +216,32 @@ def get_merlin_data(mibfiles, hdrfile, dmfile=None, skip_frames=None, scanX=None
     hdrfile : string
         HDR filename
     dmfile : string
-        Digital Micrograph (DM) file associated with the 4D-STEM dataset.  If provided, 
-        image scan shape will be determined using the DM file.  If not provided, this
-        info will need to manually provided using scanX and scanY.
+        Digital Micrograph (DM) file associated with the 4D-STEM dataset. If
+        provided, image scan shape will be determined using the DM file.
+        If not provided, this info will need to manually provided using
+        scanX and scanY.
+    skip_frames : int
+        Number of extra frames at the beginning of the dataset to skip.
     scanX : list
-        List of the form [scan_size, axis_name, units] giving information regarding the
-        horizonatal axis of the scan. scan_size is an integer, while axis_name and units
-        are both strings.
+        List of the form [scan_size, axis_name, units] giving information
+        regarding the horizonatal axis of the scan. scan_size is an integer,
+        while axis_name and units are both strings.
     scanY : list
-        List of the form [scan_size, axis_name, units] giving information regarding the
-        vertical axis of the scan. scan_size is an integer, while axis_name and units
-        are both strings.
+        List of the form [scan_size, axis_name, units] giving information
+        regarding the vertical axis of the scan. scan_size is an integer,
+        while axis_name and units are both strings.
     use_fpd : boolean
-        If True (default), use the fpd package's MerlinBinary class to read the data.
-        If False, the data will be read NumPy's fromfile function.  Using fpd is faster and
-        preferred in most cases.  The other option is included in case fpd has trouble with
-        the dataset for one reason or another.
+        If True (default), use the fpd package's MerlinBinary class to read
+        the data. If False, the data will be read NumPy's fromfile function.
+        Using fpd is faster and preferred in most cases.  The other option is
+        included in case fpd has trouble with the dataset for one reason or
+        another.
     scan_calibration : float
-        If no DM file is provided, the pixel size of the scan axes can be manually entered.
+        If no DM file is provided, the pixel size of the scan axes can be
+        manually entered.
     use_progressbar : boolean
-        If True, show a progress bar during data processing.  Otherwise, do not show.
+        If True, show a progress bar during data processing.  Otherwise,
+        do not show.
 
     Returns
     ----------
@@ -241,23 +256,25 @@ def get_merlin_data(mibfiles, hdrfile, dmfile=None, skip_frames=None, scanX=None
     # Get exposure times from MIB file(s)
     logger.info("Reading exposure times from MIB files")
     exposures = get_exposure_times(mibfiles)
-    
+
     # Use exposure times to determine the number of extra frames at
     # the beginning and end of the dataset.
     if skip_frames is None:
         skip_frames = np.argmax(exposures[0:10]) + 1
-        # logger.info("%i extra frames found at beginning of dataset based on expsosure times" % skip_frames)
+        logger.info("%i extra frames found at beginning of dataset based on"
+                    "expsosure times" % skip_frames)
     exposures = exposures[skip_frames:]
 
-    # Determine total number of frames. If a list of .mib files is provided, 
-    # the total number of frames is simply the number of files. If a single .mib
-    # file is provided, the total number of frames is determined based on the file size.
+    # Determine total number of frames. If a list of .mib files is provided,
+    # the total number of frames is simply the number of files. If a single
+    # .mib file is provided, the total number of frames is determined based
+    # on the file size.
     if type(mibfiles) is list:
         mibfiles = sort_mibs(mibfiles)
         total_frames = len(mibfiles)
     else:
         total_frames = int(os.path.getsize(mibfiles) / (2*(256**2) + 384))
-        # logger.info("%i total frames based on size of MIB file" % total_frames)
+        logger.info("%i total frames based on size of MIB file" % total_frames)
 
     # Determine scan parameters.
     if dmfile:
@@ -275,7 +292,7 @@ def get_merlin_data(mibfiles, hdrfile, dmfile=None, skip_frames=None, scanX=None
         nframes = int(total_frames - skip_frames)
         scanX = [nframes, 'x', 'pixels']
         scanY = [1, 'y', 'pixels']
-    
+
     extra_frames = total_frames - nframes - skip_frames
     # logger.info("%i extra frames detected at end of dataset" % extra_frames)
     exposures = exposures[:-extra_frames]
@@ -289,7 +306,8 @@ def get_merlin_data(mibfiles, hdrfile, dmfile=None, skip_frames=None, scanX=None
     logger.info('Total number of frames: %s' % total_frames)
     logger.info('Extra frames at beginning of scan: %s' % skip_frames)
     logger.info('Extra frames at end of scan: %s' % extra_frames)
-    logger.info('Resulting data shape: [%s, %s, %s, %s]' % (scanX[0], scanY[0], 256, 256))
+    logger.info('Resulting data shape: [%s, %s, %s, %s]' %
+                (scanX[0], scanY[0], 256, 256))
 
     # Read data using the fpd module
     if use_fpd:
@@ -303,7 +321,7 @@ def get_merlin_data(mibfiles, hdrfile, dmfile=None, skip_frames=None, scanX=None
         else:
             data = MerlinBinary(binfns=mibfiles,
                                 hdrfn=hdrfile,
-                                dmfns = [],
+                                dmfns=[],
                                 ds_start_skip=skip_frames,
                                 scanXalu=scanX,
                                 scanYalu=scanY,
@@ -314,45 +332,53 @@ def get_merlin_data(mibfiles, hdrfile, dmfile=None, skip_frames=None, scanX=None
     # Read data using NumPy
     else:
         # Parse the header file to determine the counter depth.
-        if hdr['CounterDepth'] == '6' or hdr['CounterDepth']=='1':
+        if hdr['CounterDepth'] == '6' or hdr['CounterDepth'] == '1':
             data_type = np.uint8
         elif hdr['CounterDepth'] == '12':
             data_type = np.uint16
         elif hdr['CounterDepth'] == '24':
             data_type = np.uint32
 
-        data = np.zeros([nframes,256**2], data_type)
+        data = np.zeros([nframes, 256**2], data_type)
         if type(mibfiles) is list:
-            for i in tqdm.tqdm(range(0, nframes), disable=(not show_progressbar)):
+            for i in tqdm.tqdm(range(0, nframes),
+                               disable=(not show_progressbar)):
                 h = open(mibfiles[i+skip_frames], 'rb')
-                data[i,:] = np.fromfile(h, dtype=data_type, offset=384)
+                data[i, :] = np.fromfile(h, dtype=data_type, offset=384)
                 h.close()
         else:
             with open(mibfiles, 'rb') as h:
-                for i in tqdm.tqdm(range(0, nframes+skip_frames), disable=(not show_progressbar)):
+                for i in tqdm.tqdm(range(0, nframes+skip_frames),
+                                   disable=(not show_progressbar)):
                     if i < skip_frames:
-                        _ = np.fromfile(h, dtype=data_type, count=256**2, offset=384)
+                        _ = np.fromfile(h, dtype=data_type, count=256**2,
+                                        offset=384)
                     else:
-                        data[i-skip_frames,:] = np.fromfile(h, dtype=data_type, count=256**2, offset=384)
+                        data[i-skip_frames, :] = np.fromfile(h,
+                                                             dtype=data_type,
+                                                             count=256**2,
+                                                             offset=384)
 
         data = data.reshape([scanY[0], scanX[0], 256, 256])
 
     # Convert data to a PyXem ElectronDiffractoin2D signal
     data = pxm.ElectronDiffraction2D(data)
-    
+
     # Set the spatial calibration.  If no DM file is provided,
     # the calibration is set to 1.0 nm.
     data.set_scan_calibration(scan_calibration)
-    
+
     # Diffraction calibration is set to 1.0 A^-1
     data.set_diffraction_calibration(1.0)
 
     # Populate metadata
     if dmfile:
+        dm_key = "Acquisition_instrument.TEM."
         for i in dm.metadata.Acquisition_instrument.TEM:
-            data.metadata.set_item("Acquisition_instrument.TEM." + i[0],
-                                   dm.metadata.get_item("Acquisition_instrument.TEM." + i[0]))
+            data.metadata.set_item(dm_key + i[0],
+                                   dm.metadata.get_item(dm_key + i[0]))
     for i in hdr:
         data.metadata.set_item("Acquisition_instrument.Merlin." + i, hdr[i])
-    data.metadata.set_item("Acquisition_instrument.Merlin.exposures", exposures)
+    exposure_key = "Acquisition_instrument.Merlin.exposures"
+    data.metadata.set_item(exposure_key, exposures)
     return data

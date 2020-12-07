@@ -3,20 +3,20 @@ from setuptools import setup
 setup(
     name='MerlinTools',
     version='0.1dev',
-    packages=['merlintools',],
+    packages=['merlintools', ],
     description='Handle 4D-STEM data collected with a Merlin detector.',
     long_description=open('README.md').read(),
-    install_requires = [
+    install_requires=[
             'numpy',
             'hyperspy',
             'fpd',
             'pyxem',
             'tqdm',
             ],
-    author = 'Andrew Herzing',
-    author_email = 'andrew.herzing@nist.gov',
-    license = 'GPL v3',
-    keywords = [
+    author='Andrew Herzing',
+    author_email='andrew.herzing@nist.gov',
+    license='GPL v3',
+    keywords=[
         'STEM',
         'data analysis',
         'microscopy',
