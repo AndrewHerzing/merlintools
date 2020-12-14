@@ -8,8 +8,9 @@ logger.setLevel(logging.INFO)
 
 
 def preprocess(datapath="./", mibfile=None, dmfile=None, com_threshold=3,
-               r_bf=15, r_adf_inner=20, r_adf_outer=65, save_results=True,
-               return_all=False, overwrite=False):
+               shift_interpolation=0, r_bf=15, r_adf_inner=20,
+               r_adf_outer=65, save_results=True, return_all=False,
+               overwrite=False):
     if not mibfile:
         mibfile = glob.glob(datapath + "*.mib")[0]
     if not dmfile:
@@ -32,7 +33,8 @@ def preprocess(datapath="./", mibfile=None, dmfile=None, com_threshold=3,
     logger.info("Centering diffraction patterns")
     s_com = s.center_of_mass(threshold=com_threshold)
     s_com -= 128
-    s = s.shift_diffraction(s_com.inav[0].data, s_com.inav[1].data)
+    s = s.shift_diffraction(s_com.inav[0].data, s_com.inav[1].data,
+                            interpolation_order=shift_interpolation)
 
     logger.info("Computing sum pattern")
     sum_pattern = s.sum((0, 1))
