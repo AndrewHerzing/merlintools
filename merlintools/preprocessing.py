@@ -10,12 +10,11 @@ logger.setLevel(logging.INFO)
 def preprocess(datapath="./", mibfile=None, dmfile=None, com_threshold=3,
                shift_interpolation=0, r_bf=15, r_adf_inner=20,
                r_adf_outer=65, save_results=True, return_all=False,
-               overwrite=False):
+               overwrite=False, outpath=None):
     if not mibfile:
         mibfile = glob.glob(datapath + "*.mib")[0]
     if not dmfile:
         dmfile = glob.glob(datapath + "*.dm3")[0]
-
     s = px.load_mib(mibfile)
     logger.info(".mib file loaded")
     dm = px.load(dmfile)
@@ -47,32 +46,40 @@ def preprocess(datapath="./", mibfile=None, dmfile=None, com_threshold=3,
                                        r=r_adf_outer)
 
     if save_results:
+        if not outpath:
+            outpath = datapath
         logger.info("Saving data")
-        s.save(os.path.splitext(mibfile)[0] + ".hspy", overwrite=overwrite)
+        full_filename_out = outpath + os.path.splitext(mibfile)[0] + ".hspy"
+        s.save(full_filename_out, overwrite=overwrite)
 
         sum_pattern_out = sum_pattern.deepcopy()
         sum_pattern_out.data = (255*sum_pattern_out.data /
                                 sum_pattern_out.data.max())
         sum_pattern_out.change_dtype('uint8')
-        sum_pattern.save(os.path.splitext(mibfile)[0] + "_SumPattern.hspy",
+        sum_filename_out = outpath + os.path.splitext(mibfile)[0] +\
+            "_SumPattern.hspy"
+        sum_pattern.save(sum_filename_out,
                          overwrite=overwrite)
-        sum_pattern_out.save(os.path.splitext(mibfile)[0] + "_SumPattern.png",
+        sum_filename_out = outpath + os.path.splitext(mibfile)[0] +\
+            "_SumPattern.png"
+        sum_pattern_out.save(sum_filename_out,
                              overwrite=overwrite)
 
         bf_out = bf.deepcopy()
         bf_out.data = 255*bf_out.data/bf_out.data.max()
         bf_out.change_dtype('uint8')
-        bf.save(os.path.splitext(mibfile)[0] + "_BF.hspy", overwrite=overwrite)
-        bf_out.save(os.path.splitext(mibfile)[0] + "_BF.png",
-                    overwrite=overwrite)
+        bf_filename_out = outpath + os.path.splitext(mibfile)[0] + "_BF.hspy"
+        bf.save(bf_filename_out, overwrite=overwrite)
+        bf_filename_out = outpath + os.path.splitext(mibfile)[0] + "_BF.png"
+        bf_out.save(bf_filename_out, overwrite=overwrite)
 
         adf_out = adf.deepcopy()
         adf_out.data = 255*adf_out.data/adf_out.data.max()
         adf_out.change_dtype('uint8')
-        adf_out.save(os.path.splitext(mibfile)[0] + "_ADF.hspy",
-                     overwrite=overwrite)
-        adf_out.save(os.path.splitext(mibfile)[0] + "_ADF.png",
-                     overwrite=overwrite)
+        adf_filename_out = outpath + os.path.splitext(mibfile)[0] + "_BF.hspy"
+        adf_out.save(adf_filename_out, overwrite=overwrite)
+        adf_filename_out = outpath + os.path.splitext(mibfile)[0] + "_BF.png"
+        adf_out.save(adf_filename_out, overwrite=overwrite)
     logger.info("Processing complete")
     if return_all:
         return s, sum_pattern, bf, adf
