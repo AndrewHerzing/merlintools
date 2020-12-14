@@ -49,36 +49,34 @@ def preprocess(datapath="./", mibfile=None, dmfile=None, com_threshold=3,
         if not outpath:
             outpath = datapath
         logger.info("Saving data")
-        full_filename_out = outpath + os.path.splitext(mibfile)[0] + ".hspy"
+        rootname = os.path.splitext(os.path.split(mibfile)[1])[0]
+        full_filename_out = outpath + rootname + ".hspy"
         s.save(full_filename_out, overwrite=overwrite)
 
         sum_pattern_out = sum_pattern.deepcopy()
         sum_pattern_out.data = (255*sum_pattern_out.data /
                                 sum_pattern_out.data.max())
         sum_pattern_out.change_dtype('uint8')
-        sum_filename_out = outpath + os.path.splitext(mibfile)[0] +\
-            "_SumPattern.hspy"
+        sum_filename_out = outpath + rootname + "_SumPattern.hspy"
         sum_pattern.save(sum_filename_out,
                          overwrite=overwrite)
-        sum_filename_out = outpath + os.path.splitext(mibfile)[0] +\
-            "_SumPattern.png"
-        sum_pattern_out.save(sum_filename_out,
-                             overwrite=overwrite)
+        sum_filename_out = outpath + rootname + "_SumPattern.png"
+        sum_pattern_out.save(sum_filename_out, overwrite=overwrite)
 
         bf_out = bf.deepcopy()
         bf_out.data = 255*bf_out.data/bf_out.data.max()
         bf_out.change_dtype('uint8')
-        bf_filename_out = outpath + os.path.splitext(mibfile)[0] + "_BF.hspy"
+        bf_filename_out = outpath + rootname + "_BF.hspy"
         bf.save(bf_filename_out, overwrite=overwrite)
-        bf_filename_out = outpath + os.path.splitext(mibfile)[0] + "_BF.png"
+        bf_filename_out = outpath + rootname + "_BF.png"
         bf_out.save(bf_filename_out, overwrite=overwrite)
 
         adf_out = adf.deepcopy()
         adf_out.data = 255*adf_out.data/adf_out.data.max()
         adf_out.change_dtype('uint8')
-        adf_filename_out = outpath + os.path.splitext(mibfile)[0] + "_BF.hspy"
+        adf_filename_out = outpath + rootname + "_ADF.hspy"
         adf_out.save(adf_filename_out, overwrite=overwrite)
-        adf_filename_out = outpath + os.path.splitext(mibfile)[0] + "_BF.png"
+        adf_filename_out = outpath + rootname + "_ADF.png"
         adf_out.save(adf_filename_out, overwrite=overwrite)
     logger.info("Processing complete")
     if return_all:
