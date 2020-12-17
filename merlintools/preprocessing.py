@@ -4,7 +4,7 @@ import os
 import logging
 import numpy as np
 import fpd
-from merlin.io import parse_mib_header, get_exposure_times
+from merlintools.io import parse_mib_header, get_exposure_times
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -248,7 +248,7 @@ def merlin_to_fpd(rootpath, savepath=".\\", keep_raw=False, shutdown=False,
         outpaths[i] = savepath + os.path.split(mibfiles[0])[0][2:] + "\\"
 
         if not os.path.isdir(outpaths[i]):
-            os.mkdir(outpaths[i])
+            os.makedirs(outpaths[i])
         h5filenames[i] = outpaths[i] + \
             os.path.splitext(os.path.split(mibfiles[0])[1])[0] + '.hdf5'
 
