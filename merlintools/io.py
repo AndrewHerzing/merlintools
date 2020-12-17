@@ -276,7 +276,7 @@ def get_merlin_data(mibfiles, hdrfile, dmfile=None, skip_frames=None,
     # the beginning and end of the dataset.
     if skip_frames is None:
         skip_frames = np.argmax(exposures[0:10]) + 1
-        logger.info("%i extra frames found at beginning of dataset based on"
+        logger.info("%i extra frames found at beginning of dataset based on "
                     "expsosure times" % skip_frames)
     exposures = exposures[skip_frames:]
 
