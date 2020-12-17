@@ -204,14 +204,15 @@ def get_scan_shape(mibfiles):
                        (data_length*n_detector_pix + header_length))
     logger.info("Total frames: %s" % total_frames)
 
-    exposures = get_exposure_times(mibfiles[0])
+    exposures = get_exposure_times(mibfiles[0], int(0.1*total_frames))
     skip_frames = np.argmax(exposures[0:10])
     logger.info("Extra frames at beginning: %s" % skip_frames)
 
     flybacks = np.where(exposures[skip_frames:] >= 1.5 *
                         exposures[skip_frames + 1])[0]
     scan_width = flybacks[1]
-    scan_height = int(flybacks[-2]/scan_width)
+    # scan_height = int(flybacks[-2]/scan_width)
+    scan_height = int(np.round(total_frames/scan_width))
     if flybacks[1] == 0.5*flybacks[2]:
         logger.info("Scan width based on flyback: %s pixels" % scan_width)
         logger.info("Scan height based on flyback: %s pixels" % scan_height)
