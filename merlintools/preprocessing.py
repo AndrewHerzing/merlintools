@@ -277,11 +277,10 @@ def merlin_to_fpd(rootpath, savepath=".\\", keep_raw=False, shutdown=False,
                                             row_end_skip=0,
                                             sort_binary_file_list=False,
                                             strict=False,
-                                            repack=True,
-                                            allow_memmap=False)
+                                            repack=True)
 
             logger.info("Saving unshaped data to file: %s" % rawfilename)
-            raw.write_hdf5(rawfilename, ow=True)
+            raw.write_hdf5(rawfilename, ow=True, allow_memmap=False)
             del raw
 
         s = fpd.fpd_file.MerlinBinary(binfns=mibfiles,
@@ -292,11 +291,10 @@ def merlin_to_fpd(rootpath, savepath=".\\", keep_raw=False, shutdown=False,
                                       scanYalu=scanY,
                                       sort_binary_file_list=False,
                                       strict=False,
-                                      repack=True,
-                                      allow_memmap=False)
+                                      repack=True)
 
         logger.info("Saving to file: %s" % h5filenames[i])
-        s.write_hdf5(h5filenames[i], ow=True)
+        s.write_hdf5(h5filenames[i], ow=True, allow_memmap=False)
         del s
 
     if shutdown:
