@@ -161,7 +161,8 @@ def preprocess_merlin_data(datapath, savepath=None):
                                   ds_start_skip=0,
                                   row_end_skip=0,
                                   sort_binary_file_list=False,
-                                  strict=False)
+                                  strict=False,
+                                  repack=True)
 
     s.write_hdf5(h5filename, allow_memmap=False, ow=True)
     del s
@@ -204,7 +205,7 @@ def get_scan_shape(mibfiles):
                        (data_length*n_detector_pix + header_length))
     logger.info("Total frames: %s" % total_frames)
 
-    exposures = get_exposure_times(mibfiles[0], int(0.1*total_frames))
+    exposures = get_exposure_times(mibfiles[0], int(0.05*total_frames))
     skip_frames = np.argmax(exposures[0:10])
     logger.info("Extra frames at beginning: %s" % skip_frames)
 
@@ -275,7 +276,9 @@ def merlin_to_fpd(rootpath, savepath=".\\", keep_raw=False, shutdown=False,
                                             ds_start_skip=0,
                                             row_end_skip=0,
                                             sort_binary_file_list=False,
-                                            strict=False)
+                                            strict=False,
+                                            repack=True,
+                                            allow_memmap=False)
 
             logger.info("Saving unshaped data to file: %s" % rawfilename)
             raw.write_hdf5(rawfilename, ow=True)
@@ -288,7 +291,9 @@ def merlin_to_fpd(rootpath, savepath=".\\", keep_raw=False, shutdown=False,
                                       scanXalu=scanX,
                                       scanYalu=scanY,
                                       sort_binary_file_list=False,
-                                      strict=False)
+                                      strict=False,
+                                      repack=True,
+                                      allow_memmap=False)
 
         logger.info("Saving to file: %s" % h5filenames[i])
         s.write_hdf5(h5filenames[i], ow=True)

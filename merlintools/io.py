@@ -54,12 +54,12 @@ def get_exposure_times(mibfiles, n=None):
         The exposure time, in seconds, for each frame in the dataset
 
     """
-
     if type(mibfiles) is list and len(mibfiles) > 1:
         # If n is not provided, get number of frames from the filesize
         # and read all exposures
         if n is None:
             n = len(mibfiles)
+        logger.info("Reading %s exposure times" % n)
         exposures = np.zeros(n)
         for i in range(0, n):
             with open(mibfiles[i], 'r') as h:
@@ -83,8 +83,11 @@ def get_exposure_times(mibfiles, n=None):
         # If n is not provided, get number of frames from the filesize
         # and read all exposures
         if n is None:
+            logger.info("Reading all exposure times")
             n = int(os.path.getsize(mibfiles) /
                     (data_length*(256**2) + header_length))
+        else:
+            logger.info("Reading %s exposure times" % n)
         exposures = np.zeros(n)
         with open(mibfiles, 'rb') as h:
             for i in range(0, n):
