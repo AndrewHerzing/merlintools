@@ -10,9 +10,11 @@ merlin_path = os.path.dirname(merlintools.__file__)
 class TestReadMIB:
     def test_load_mib_with_dm(self):
         dmfilename = os.path.join(merlin_path, "tests",
-                                  "test_data", "HAADF.dm3")
-        mibfile = os.path.join(merlin_path, "tests", "test_data", "merlin.mib")
-        hdrfile = os.path.join(merlin_path, "tests", "test_data", "merlin.hdr")
+                                  "test_data", "TestData_12bit", "HAADF.dm3")
+        mibfile = os.path.join(merlin_path, "tests", "test_data",
+                               "TestData_12bit", "merlin.mib")
+        hdrfile = os.path.join(merlin_path, "tests", "test_data",
+                               "TestData_12bit", "merlin.hdr")
         s = merlintools.io.get_merlin_data(mibfile, hdrfile, dmfilename,
                                            use_fpd=False,
                                            show_progressbar=False)
@@ -22,9 +24,11 @@ class TestReadMIB:
 
     def test_load_mib_with_dm_fpd(self):
         dmfilename = os.path.join(merlin_path, "tests",
-                                  "test_data", "HAADF.dm3")
-        mibfile = os.path.join(merlin_path, "tests", "test_data", "merlin.mib")
-        hdrfile = os.path.join(merlin_path, "tests", "test_data", "merlin.hdr")
+                                  "test_data", "TestData_12bit", "HAADF.dm3")
+        mibfile = os.path.join(merlin_path, "tests", "test_data",
+                               "TestData_12bit", "merlin.mib")
+        hdrfile = os.path.join(merlin_path, "tests", "test_data",
+                               "TestData_12bit", "merlin.hdr")
         s = merlintools.io.get_merlin_data(mibfile, hdrfile, dmfilename,
                                            use_fpd=True,
                                            show_progressbar=False)
@@ -33,8 +37,10 @@ class TestReadMIB:
         assert s.axes_manager.navigation_shape == (20, 20)
 
     def test_load_mib_no_dm(self):
-        mibfile = os.path.join(merlin_path, "tests", "test_data", "merlin.mib")
-        hdrfile = os.path.join(merlin_path, "tests", "test_data", "merlin.hdr")
+        mibfile = os.path.join(merlin_path, "tests", "test_data",
+                               "TestData_12bit", "merlin.mib")
+        hdrfile = os.path.join(merlin_path, "tests", "test_data",
+                               "TestData_12bit", "merlin.hdr")
         s = merlintools.io.get_merlin_data(mibfile, hdrfile,
                                            use_fpd=False,
                                            show_progressbar=False)
@@ -43,8 +49,10 @@ class TestReadMIB:
         assert s.axes_manager.navigation_shape == (404, 1)
 
     def test_load_mib_no_dm_fpd(self):
-        mibfile = os.path.join(merlin_path, "tests", "test_data", "merlin.mib")
-        hdrfile = os.path.join(merlin_path, "tests", "test_data", "merlin.hdr")
+        mibfile = os.path.join(merlin_path, "tests", "test_data",
+                               "TestData_12bit", "merlin.mib")
+        hdrfile = os.path.join(merlin_path, "tests", "test_data",
+                               "TestData_12bit", "merlin.hdr")
         s = merlintools.io.get_merlin_data(mibfile, hdrfile,
                                            use_fpd=True,
                                            show_progressbar=False)
@@ -53,9 +61,10 @@ class TestReadMIB:
         assert s.axes_manager.navigation_shape == (404, 1)
 
     def test_load_mib_manual_scan(self):
-
-        mibfile = os.path.join(merlin_path, "tests", "test_data", "merlin.mib")
-        hdrfile = os.path.join(merlin_path, "tests", "test_data", "merlin.hdr")
+        mibfile = os.path.join(merlin_path, "tests", "test_data",
+                               "TestData_12bit", "merlin.mib")
+        hdrfile = os.path.join(merlin_path, "tests", "test_data",
+                               "TestData_12bit", "merlin.hdr")
         s = merlintools.io.get_merlin_data(mibfile, hdrfile,
                                            scanX=[20, 'x', 'nm'],
                                            scanY=[20, 'y', 'nm'],
@@ -66,8 +75,10 @@ class TestReadMIB:
         assert s.axes_manager.navigation_shape == (20, 20)
 
     def test_load_mib_manual_scan_fpd(self):
-        mibfile = os.path.join(merlin_path, "tests", "test_data", "merlin.mib")
-        hdrfile = os.path.join(merlin_path, "tests", "test_data", "merlin.hdr")
+        mibfile = os.path.join(merlin_path, "tests", "test_data",
+                               "TestData_12bit", "merlin.mib")
+        hdrfile = os.path.join(merlin_path, "tests", "test_data",
+                               "TestData_12bit", "merlin.hdr")
         s = merlintools.io.get_merlin_data(mibfile, hdrfile,
                                            scanX=[20, 'x', 'nm'],
                                            scanY=[20, 'y', 'nm'],
@@ -81,9 +92,11 @@ class TestReadMIB:
 class TestExposureShape:
     def test_exposure_shape_with_dm(self):
         dmfilename = os.path.join(merlin_path, "tests",
-                                  "test_data", "HAADF.dm3")
-        mibfile = os.path.join(merlin_path, "tests", "test_data", "merlin.mib")
-        hdrfile = os.path.join(merlin_path, "tests", "test_data", "merlin.hdr")
+                                  "test_data", "TestData_12bit", "HAADF.dm3")
+        mibfile = os.path.join(merlin_path, "tests", "test_data",
+                               "TestData_12bit", "merlin.mib")
+        hdrfile = os.path.join(merlin_path, "tests", "test_data",
+                               "TestData_12bit", "merlin.hdr")
         s = merlintools.io.get_merlin_data(mibfile, hdrfile, dmfilename,
                                            use_fpd=False,
                                            show_progressbar=False)
@@ -93,8 +106,10 @@ class TestExposureShape:
             s.axes_manager.navigation_shape
 
     def test_exposure_shape_without_dm(self):
-        mibfile = os.path.join(merlin_path, "tests", "test_data", "merlin.mib")
-        hdrfile = os.path.join(merlin_path, "tests", "test_data", "merlin.hdr")
+        mibfile = os.path.join(merlin_path, "tests", "test_data",
+                               "TestData_12bit", "merlin.mib")
+        hdrfile = os.path.join(merlin_path, "tests", "test_data",
+                               "TestData_12bit", "merlin.hdr")
         s = merlintools.io.get_merlin_data(mibfile, hdrfile,
                                            use_fpd=False,
                                            show_progressbar=False)
@@ -106,7 +121,8 @@ class TestExposureShape:
 
 class TestHeaderParsing:
     def test_hdr_parser(self):
-        hdrfile = os.path.join(merlin_path, "tests", "test_data", "merlin.hdr")
+        hdrfile = os.path.join(merlin_path, "tests", "test_data",
+                               "TestData_12bit", "merlin.hdr")
         header = merlintools.io.parse_hdr(hdrfile)
         assert type(header) is dict
         assert 'TimeStamp' in header.keys()
@@ -114,7 +130,8 @@ class TestHeaderParsing:
         assert np.int(header['TotalFrames']) == 11007
 
     def test_mib_parser(self):
-        mibfile = os.path.join(merlin_path, "tests", "test_data", "merlin.mib")
+        mibfile = os.path.join(merlin_path, "tests", "test_data",
+                               "TestData_12bit", "merlin.mib")
         header = merlintools.io.parse_mib_header(mibfile)
         assert type(header) is dict
         assert 'HeaderID' in header.keys()
