@@ -1,10 +1,14 @@
+import os
 import glob
 import pyxem as px
-import os
 import logging
 import numpy as np
 import fpd
 from merlintools.io import parse_mib_header, get_exposure_times
+import tkinter as tk
+from tkinter import filedialog
+import time
+import shutil
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -195,7 +199,7 @@ def get_scan_shape(mibfiles):
     mib_hdr = parse_mib_header(mibfiles[0])
     n_detector_pix = mib_hdr['PixDimX'] * mib_hdr['PixDimY']
     header_length = mib_hdr['DataOffset']
-    if mib_hdr['PixDepth'] == 'U8':
+    if mib_hdr['PixDepth'] == 'U08':
         data_length = 1
     elif mib_hdr['PixDepth'] == 'U16':
         data_length = 2
@@ -205,49 +209,64 @@ def get_scan_shape(mibfiles):
                        (data_length*n_detector_pix + header_length))
     logger.info("Total frames: %s" % total_frames)
 
-    exposures = get_exposure_times(mibfiles[0], int(0.05*total_frames))
-    skip_frames = np.argmax(exposures[0:10])
+    exposures = get_exposure_times(mibfiles[0], int(0.2*total_frames))
+    exposures_round = np.round(exposures, 4)
+    vals, counts = np.unique(exposures_round, return_counts=True)
+    exposure_time = vals[counts.argmax()]
+    skip_frames = np.where(exposures_round == exposure_time)[0][0] - 1
     logger.info("Extra frames at beginning: %s" % skip_frames)
 
-    flybacks = np.where(exposures[skip_frames:] >= 1.5 *
-                        exposures[skip_frames + 1])[0]
-    scan_width = flybacks[1]
-    # scan_height = int(flybacks[-2]/scan_width)
+    test_frames = np.where(exposures_round > 1.5*exposure_time)[0]
+    scan_width = test_frames[-1] - test_frames[-2]
     scan_height = int(np.round(total_frames/scan_width))
-    if flybacks[1] == 0.5*flybacks[2]:
-        logger.info("Scan width based on flyback: %s pixels" % scan_width)
-        logger.info("Scan height based on flyback: %s pixels" % scan_height)
-        scanXalu = [np.arange(0, scan_width), 'x', 'pixels']
-        scanYalu = [np.arange(0, scan_height), 'y', 'pixels']
-        logger.info("Extra frames at end: %s" %
-                    (total_frames-skip_frames-scan_width*scan_height))
-    else:
-        logger.error("Unable to determine scan shape")
-        scanXalu = [np.arange(0, 1), 'x', 'pixels']
-        scanYalu = [np.arange(0, total_frames - skip_frames), 'y', 'pixels']
+    logger.info("Scan width based on flyback: %s pixels" % scan_width)
+    logger.info("Scan height based on flyback: %s pixels" % scan_height)
 
+    scanXalu = [np.arange(0, scan_width), 'x', 'pixels']
+    scanYalu = [np.arange(0, scan_height), 'y', 'pixels']
+    logger.info("Extra frames at end: %s" %
+                (total_frames-skip_frames-scan_width*scan_height))
     return scanXalu, scanYalu, skip_frames, total_frames
 
 
-def merlin_to_fpd(rootpath, savepath=".\\", keep_raw=False, shutdown=False,
-                  discard_first_column=True):
-    if savepath[-1:] != "\\":
-        savepath = savepath + "\\"
-    if not os.path.isdir(savepath):
-        os.mkdir(savepath)
+def merlin_to_fpd(rootpath=None, savepath=None, keep_raw=False, shutdown=False,
+                  discard_first_column=False, discard_data=False):
+    if not rootpath:
+        root = tk.Tk()
+        root.withdraw()
+        root.call('wm', 'attributes', '.', '-topmost', True)
+        rootpath = filedialog.askdirectory(initialdir="c:/users/aherzing/data",
+                                           title="Select data directory...")
+        rootpath = rootpath + "/"
+    if not savepath:
+        startpath = os.path.abspath(os.path.join(rootpath, "..")).\
+            replace('\\', '/')
+        root = tk.Tk()
+        root.withdraw()
+        root.call('wm', 'attributes', '.', '-topmost', True)
+        savepath = filedialog.askdirectory(initialdir=startpath,
+                                           title="Select save directory...")
+        savepath = savepath + "/"
+
+    temp_dir = os.path.dirname(os.path.dirname(rootpath)) +\
+        time.strftime("/%Y%m%d_%H%M%S_FPD_EXPORT/")
+    if savepath[-1:] != "/":
+        savepath = savepath + "/"
 
     dirs = [x[0] for x in os.walk(rootpath)]
     empty_dirs = []
     for i in dirs:
-        if len(glob.glob(i+"\\*.mib")) == 0:
+        if len(glob.glob(i+"/*.mib")) == 0:
             empty_dirs.append(i)
     [dirs.remove(i) for i in empty_dirs]
     outpaths = [None] * len(dirs)
     h5filenames = [None] * len(dirs)
 
     for i in range(0, len(dirs)):
-        mibfiles = glob.glob(dirs[i] + "\\*.mib")
-        outpaths[i] = savepath + os.path.split(mibfiles[0])[0][2:] + "\\"
+        mibfiles = glob.glob(dirs[i] + "/*.mib")
+        mibfiles = [filepath.replace('\\', '/') for filepath in mibfiles]
+        outpaths[i] = temp_dir + '/' + mibfiles[0].split('/')[-3] +\
+            '/' + mibfiles[0].split('/')[-2] + '/'
 
         if not os.path.isdir(outpaths[i]):
             os.makedirs(outpaths[i])
@@ -255,19 +274,21 @@ def merlin_to_fpd(rootpath, savepath=".\\", keep_raw=False, shutdown=False,
             os.path.splitext(os.path.split(mibfiles[0])[1])[0] + '.hdf5'
 
     for i in range(0, len(dirs)):
-        mibfiles = glob.glob(dirs[i] + "\\*.mib")
-        hdrfile = glob.glob(dirs[i] + "\\*.hdr")[0]
+        mibfiles = glob.glob(dirs[i] + "/*.mib")
+        hdrfile = glob.glob(dirs[i] + "/*.hdr")[0]
+        dmfile = glob.glob(dirs[i] + "/*.dm*")
 
         logger.info("Merlin Data File: %s" % mibfiles[0])
         logger.info("Merlin Header File: %s" % hdrfile)
         logger.info("Saving to path: %s" % outpaths[i])
-        scanX, scanY, skip_frames, total_frames = get_scan_shape(mibfiles)
-        if discard_first_column:
-            skip_frames += 1
-            scanX[0] = scanX[0][:-1]
-            end_skip = 1
+
+        if len(dmfile) > 0:
+            logger.info("Found DM file: %s" % dmfile[0])
+            save_dm = True
         else:
-            end_skip = 0
+            save_dm = False
+
+        scanX, scanY, skip_frames, total_frames = get_scan_shape(mibfiles)
 
         if keep_raw:
             rawfilename = h5filenames[i][:-5] + "_Raw.hdf5"
@@ -283,20 +304,42 @@ def merlin_to_fpd(rootpath, savepath=".\\", keep_raw=False, shutdown=False,
             raw.write_hdf5(rawfilename, ow=True, allow_memmap=False)
             del raw
 
-        s = fpd.fpd_file.MerlinBinary(binfns=mibfiles,
-                                      hdrfn=hdrfile,
-                                      ds_start_skip=skip_frames,
-                                      row_end_skip=end_skip,
-                                      scanXalu=scanX,
-                                      scanYalu=scanY,
-                                      sort_binary_file_list=False,
-                                      strict=False,
-                                      repack=True)
+        if save_dm:
+            s = fpd.fpd_file.MerlinBinary(binfns=mibfiles,
+                                          hdrfn=hdrfile,
+                                          ds_start_skip=skip_frames,
+                                          row_end_skip=0,
+                                          dmfns=dmfile[0],
+                                          sort_binary_file_list=False,
+                                          strict=False,
+                                          repack=True)
 
-        logger.info("Saving to file: %s" % h5filenames[i])
+            logger.info("Saving to file w/ DM data: %s" % h5filenames[i])
+        else:
+            if discard_first_column:
+                skip_frames += 1
+                scanX[0] = scanX[0][:-1]
+                end_skip = 1
+            else:
+                end_skip = 0
+            s = fpd.fpd_file.MerlinBinary(binfns=mibfiles,
+                                          hdrfn=hdrfile,
+                                          ds_start_skip=skip_frames,
+                                          row_end_skip=end_skip,
+                                          scanXalu=scanX,
+                                          scanYalu=scanY,
+                                          sort_binary_file_list=False,
+                                          strict=False,
+                                          repack=True)
+
+            logger.info("Saving to file: %s" % h5filenames[i])
         s.write_hdf5(h5filenames[i], ow=True, allow_memmap=False)
         del s
 
+    savepath = savepath + time.strftime("%Y%m%d_%H%M%S/")
+    shutil.copytree(temp_dir, savepath)
+    if discard_data:
+        shutil.rmtree(rootpath)
     if shutdown:
         logger.info("Processing complete. Shutting down computer.")
         os.system("shutdown /s /t 1")
