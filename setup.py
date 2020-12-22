@@ -6,13 +6,18 @@ setup(
     packages=['merlintools', ],
     description='Handle 4D-STEM data collected with a Merlin detector.',
     long_description=open('README.md').read(),
+    extras={
+            'with_pyxem': ['pyxem', ]
+            },
     install_requires=[
             'numpy',
             'hyperspy',
             'fpd',
-            'pyxem',
             'tqdm',
             ],
+    extras_require={
+            'pyxem',
+            },
     author='Andrew Herzing',
     author_email='andrew.herzing@nist.gov',
     license='GPL v3',

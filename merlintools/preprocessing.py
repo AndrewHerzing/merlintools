@@ -1,14 +1,22 @@
 import os
 import glob
-import pyxem as px
 import logging
-import numpy as np
 import fpd
-from merlintools.io import parse_mib_header, get_exposure_times
+from merlintools.io import get_scan_shape
 import tkinter as tk
 from tkinter import filedialog
 import time
 import shutil
+
+try:
+    optional_package = None
+    import pyxem as optional_package
+except ImportError:
+    pass
+
+if optional_package:
+    import pyxem as px
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -92,55 +100,6 @@ def preprocess(datapath="./", mibfile=None, dmfile=None, com_threshold=3,
         return
 
 
-def process_fpd_data(full, exposure_image):
-    skip_frames = np.argmax(exposure_image.isig[:, 0].data).compute() + 1
-    logger.info("Extra frames at beginning of dataset: %s" % skip_frames)
-    orig_shape = full.data.shape
-    new_shape = [orig_shape[0]-1, orig_shape[1], orig_shape[2], orig_shape[3]]
-
-    full_crop = full.deepcopy()
-    data = full_crop.data.copy()
-    data = data.reshape([data.shape[0]*data.shape[1], data.shape[2],
-                         data.shape[3]])
-    data = data[skip_frames:-(orig_shape[1]-skip_frames), :, :]
-    data = data.reshape(new_shape)
-    full_crop = full_crop.inav[1:, :-1]
-    full_crop.data = data[:, :-1, :, :]
-
-    full_crop.axes_manager[0].offset = 0.0
-    full_crop.axes_manager[1].offset = 0.0
-
-    logger.info("New shape: [%s, %s, %s, %s]" %
-                tuple([i for i in full_crop.data.shape]))
-
-    orig_shape = exposure_image.data.shape
-    new_shape = [orig_shape[0]-1, orig_shape[1]]
-
-    exposure_image_crop = exposure_image.deepcopy()
-    data = exposure_image.data.copy()
-    data = data.flatten()
-
-    data = data[skip_frames:-(orig_shape[1]-skip_frames)]
-    data = data.reshape(new_shape)
-    exposure_image_crop = exposure_image_crop.isig[1:, :-1]
-    exposure_image_crop.data = data[:, :-1]
-    exposure_image_crop.axes_manager[0].offset = 0.0
-    exposure_image_crop.axes_manager[1].offset = 0.0
-
-    axes_info = full_crop.axes_manager
-
-    sum_im = full_crop.sum((0, 1)).as_signal2D((0, 1))
-    sum_diff = full_crop.sum((2, 3)).as_signal2D((0, 1))
-
-    full_crop = px.LazyElectronDiffraction2D(full_crop.data)
-    full_crop.axes_manager = axes_info
-
-    sum_im.compute()
-    sum_diff.compute()
-    exposure_image_crop.compute()
-    return full_crop, exposure_image_crop, sum_im, sum_diff
-
-
 def preprocess_merlin_data(datapath, savepath=None):
     mibfiles = glob.glob(datapath + "*.mib")
     hdrfile = glob.glob(datapath + "*.hdr")[0]
@@ -173,60 +132,29 @@ def preprocess_merlin_data(datapath, savepath=None):
 
     signals = fpd.fpd_file.fpd_to_hyperspy(h5filename,
                                            group_names=['Exposure',
-                                                        'fpd_data'])
+                                                        'fpd_data',
+                                                        'fpd_sum_im',
+                                                        'fpd_sum_diff'])
 
-    exp_im = signals[0]
-    exp_im = exp_im.as_signal2D((0, 1))
+    exposure_image = signals.Exposure
+    exposure_image = exposure_image.as_signal2D((0, 1))
 
-    full = signals[1]
-    full_crop, exposure_image_crop, sum_im, sum_diff =\
-        process_fpd_data(full, exp_im)
+    sum_image = signals.fpd_sum_im
+    sum_image = sum_image.as_signal2D((0, 1))
+
+    sum_diff = signals.fpd_sum_diff
+    sum_diff = sum_diff.as_signal2D((0, 1))
 
     rootname = os.path.splitext(h5filename)[0]
-    full_crop.save(rootname + '_Processed.hspy', overwrite=True)
-    exposure_image_crop.save(rootname + '_Exposures.hspy', overwrite=True)
-    exposure_image_crop.save(rootname + '_Exposures.tiff', overwrite=True)
+    exposure_image.save(rootname + '_Exposures.hspy', overwrite=True)
+    exposure_image.save(rootname + '_Exposures.tiff', overwrite=True)
 
-    sum_im.save(rootname + '_SumImage.hspy', overwrite=True)
-    sum_im.save(rootname + '_SumImage.tiff', overwrite=True)
+    sum_image.save(rootname + '_SumImage.hspy', overwrite=True)
+    sum_image.save(rootname + '_SumImage.tiff', overwrite=True)
 
     sum_diff.save(rootname + '_SumDiff.hspy', overwrite=True)
     sum_diff.save(rootname + '_SumDiff.tiff', overwrite=True)
     return
-
-
-def get_scan_shape(mibfiles):
-    mib_hdr = parse_mib_header(mibfiles[0])
-    n_detector_pix = mib_hdr['PixDimX'] * mib_hdr['PixDimY']
-    header_length = mib_hdr['DataOffset']
-    if mib_hdr['PixDepth'] == 'U08':
-        data_length = 1
-    elif mib_hdr['PixDepth'] == 'U16':
-        data_length = 2
-    elif mib_hdr['PixDepth'] == 'U32':
-        data_length = 4
-    total_frames = int(os.path.getsize(mibfiles[0]) /
-                       (data_length*n_detector_pix + header_length))
-    logger.info("Total frames: %s" % total_frames)
-
-    exposures = get_exposure_times(mibfiles[0], int(0.2*total_frames))
-    exposures_round = np.round(exposures, 4)
-    vals, counts = np.unique(exposures_round, return_counts=True)
-    exposure_time = vals[counts.argmax()]
-    skip_frames = np.where(exposures_round == exposure_time)[0][0] - 1
-    logger.info("Extra frames at beginning: %s" % skip_frames)
-
-    test_frames = np.where(exposures_round > 1.5*exposure_time)[0]
-    scan_width = test_frames[-1] - test_frames[-2]
-    scan_height = int(np.round(total_frames/scan_width))
-    logger.info("Scan width based on flyback: %s pixels" % scan_width)
-    logger.info("Scan height based on flyback: %s pixels" % scan_height)
-
-    scanXalu = [np.arange(0, scan_width), 'x', 'pixels']
-    scanYalu = [np.arange(0, scan_height), 'y', 'pixels']
-    logger.info("Extra frames at end: %s" %
-                (total_frames-skip_frames-scan_width*scan_height))
-    return scanXalu, scanYalu, skip_frames, total_frames
 
 
 def merlin_to_fpd(rootpath=None, savepath=None, keep_raw=False, shutdown=False,
