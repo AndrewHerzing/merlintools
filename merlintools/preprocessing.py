@@ -345,4 +345,4 @@ def merlin_to_fpd(rootpath=None, savepath=None, keep_raw=False, shutdown=False,
         os.system("shutdown /s /t 1")
     else:
         logger.info("Processing complete.")
-    return
+    return h5filenames
