@@ -169,7 +169,7 @@ def preprocess(fpd_filename=None, center=True, com_threshold=3,
 
 def merlin_to_fpd(rootpath=None, savepath=None, keep_unshaped=False,
                   shutdown=False, discard_first_column=False,
-                  discard_data=False):
+                  discard_data=False, use_remote_temp=True):
     """
     Convert FPD files to PyXEM/Hyperspy signals.
 
@@ -219,8 +219,12 @@ def merlin_to_fpd(rootpath=None, savepath=None, keep_unshaped=False,
                                            title="Select save directory...")
         savepath = savepath + "/"
 
-    temp_dir = os.path.dirname(os.path.dirname(rootpath)) +\
-        time.strftime("/%Y%m%d_%H%M%S_FPD_EXPORT/")
+    if use_remote_temp:
+        temp_dir = os.path.dirname(os.path.dirname(rootpath)) +\
+            time.strftime("/%Y%m%d_%H%M%S_FPD_EXPORT/")
+    else:
+        temp_dir = os.path.dirname(os.path.dirname(savepath)) +\
+            time.strftime("/%Y%m%d_%H%M%S_FPD_EXPORT/")
     if savepath[-1:] != "/":
         savepath = savepath + "/"
 
