@@ -193,6 +193,11 @@ def merlin_to_fpd(rootpath=None, savepath=None, keep_unshaped=False,
     discard_data : bool
         If True, the local data will be deleted after processing. Default
         is False.
+    use_remote_temp : bool
+        If True, perform data processing in temporary directory of datapath.
+        Default is True. Set to False if write permission on datapath is not
+        available.  In this case, temporary data will be written to the
+        current working directory.
 
 
     Returns
