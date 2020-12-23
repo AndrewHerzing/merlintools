@@ -141,7 +141,7 @@ def preprocess(fpd_filename=None, center=True, com_threshold=3,
                               sum_image_out.data.max())
         sum_image_out.change_dtype('uint8')
         sum_filename_out = outpath + rootname + "_SumImage.png"
-        sum_pattern_out.save(sum_filename_out, overwrite=overwrite)
+        sum_image_out.T.save(sum_filename_out, overwrite=overwrite)
 
         bf_out = bf.deepcopy()
         bf_out.data = 255*bf_out.data/bf_out.data.max()
@@ -230,17 +230,23 @@ def merlin_to_fpd(rootpath=None, savepath=None, keep_unshaped=False,
         if len(glob.glob(i+"/*.mib")) == 0:
             empty_dirs.append(i)
     [dirs.remove(i) for i in empty_dirs]
+    temppaths = [None] * len(dirs)
     outpaths = [None] * len(dirs)
+    tempfilenames = [None] * len(dirs)
     h5filenames = [None] * len(dirs)
 
     for i in range(0, len(dirs)):
         mibfiles = glob.glob(dirs[i] + "/*.mib")
         mibfiles = [filepath.replace('\\', '/') for filepath in mibfiles]
-        outpaths[i] = temp_dir + '/' + mibfiles[0].split('/')[-3] +\
+        temppaths[i] = temp_dir + mibfiles[0].split('/')[-3] +\
+            '/' + mibfiles[0].split('/')[-2] + '/'
+        outpaths[i] = savepath + mibfiles[0].split('/')[-3] +\
             '/' + mibfiles[0].split('/')[-2] + '/'
 
-        if not os.path.isdir(outpaths[i]):
-            os.makedirs(outpaths[i])
+        if not os.path.isdir(temppaths[i]):
+            os.makedirs(temppaths[i])
+        tempfilenames[i] = temppaths[i] + \
+            os.path.splitext(os.path.split(mibfiles[0])[1])[0] + '.hdf5'
         h5filenames[i] = outpaths[i] + \
             os.path.splitext(os.path.split(mibfiles[0])[1])[0] + '.hdf5'
 
@@ -262,7 +268,7 @@ def merlin_to_fpd(rootpath=None, savepath=None, keep_unshaped=False,
         scanX, scanY, skip_frames, total_frames = get_scan_shape(mibfiles)
 
         if keep_unshaped:
-            unshapedfilename = h5filenames[i][:-5] + "_Unshaped.hdf5"
+            unshapedfilename = tempfilenames[i][:-5] + "_Unshaped.hdf5"
             unshaped = fpd.fpd_file.MerlinBinary(binfns=mibfiles,
                                                  hdrfn=hdrfile,
                                                  ds_start_skip=0,
@@ -304,10 +310,10 @@ def merlin_to_fpd(rootpath=None, savepath=None, keep_unshaped=False,
                                           repack=True)
 
             logger.info("Saving to file: %s" % h5filenames[i])
-        s.write_hdf5(h5filenames[i], ow=True, allow_memmap=False)
+        s.write_hdf5(tempfilenames[i], ow=True, allow_memmap=False)
         del s
 
-    savepath = savepath + time.strftime("%Y%m%d_%H%M%S/")
+    # savepath = savepath + time.strftime("%Y%m%d_%H%M%S/")
     shutil.copytree(temp_dir, savepath)
     if discard_data:
         shutil.rmtree(rootpath)
