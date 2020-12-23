@@ -22,37 +22,93 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def preprocess(datapath="./", mibfile=None, dmfile=None, com_threshold=3,
-               shift_interpolation=0, r_bf=15, r_adf_inner=20,
-               r_adf_outer=65, save_results=True, return_all=False,
-               overwrite=False, outpath=None):
-    if not mibfile:
-        mibfile = glob.glob(datapath + "*.mib")[0]
-    if not dmfile:
-        dmfile = glob.glob(datapath + "*.dm3")[0]
-    s = px.load_mib(mibfile)
-    logger.info(".mib file loaded")
-    dm = px.load(dmfile)
-    logger.info(".dm3 file loaded")
-    if dm.axes_manager[0].units.lower() != 'nm':
-        pixsize = 1000*dm.axes_manager[0].scale
-        logger.info("Changed scale from microns to nanometers")
+def preprocess(fpd_filename=None, com_threshold=3, shift_interpolation=0,
+               r_bf=15, r_adf_inner=20, r_adf_outer=65, save_results=True,
+               return_all=False, overwrite=False, outpath=None):
+    """
+    Convert FPD files to PyXEM/Hyperspy signals.
+
+    Args
+    ----------
+    fpd_filename : str
+        FPD archive from which to extract signals. If None, a file dialog will
+        prompt for the file location.
+    com_threshold : int or float
+        Threshold to apply prior to center of mass calculation.  All values
+        below com_threshold*mean will be set to 0.
+    shift_interpolation:
+        Interpolation mode for pattern centering.
+    r_bf : int or float
+        Outer radius (in pixels) to describe the mask for producing a
+        bright-field pseudo-image
+    r_adf_inner : int or float
+        Inner radius (in pixels) to describe the mask for producing an
+        annular dark-field pseudo-image
+    r_adf_outer : int or float
+        Outer radius (in pixels) to describe the mask for producing an
+        annular dark-field pseudo-image
+    save_results : bool
+        If True, save 4D STEM data as a Hyperspy HDF5 file and the sum image,
+        sum pattern, bright-field image, and annular dark field image as
+        PNG files. Default is True.
+    return_all : bool
+        If True, return all signals in a dictionary. Default is False.
+    overwrite : bool
+        If True, overwrite any files with the same name in the save path.
+        Default is True.
+    outpath : str
+        Path to which to save the data.  If None, data will be saved to
+        the same path as the FPD archive file.
+
+
+    Returns
+    ----------
+    out_dict : dict
+        Dictionary containing all signals if return_all is True.
+
+    """
+
+    if not fpd_filename:
+        root = tk.Tk()
+        root.withdraw()
+        root.call('wm', 'attributes', '.', '-topmost', True)
+        startdir = "c:/users/aherzing/data"
+        fpd_filename = filedialog.askopenfilename(initialdir=startdir,
+                                                  title="Select FPD file...")
+
+    signals = fpd.fpd_file.fpd_to_hyperspy(fpd_filename)
+
+    s = px.ElectronDiffraction2D(signals.fpd_data)
+    sum_pattern = signals.fpd_sum_diff
+    sum_image = signals.fpd_sum_im
+
+    try:
+        signals.DM0
+    except AttributeError:
+        logger.info('No DM file stored with data')
     else:
-        pixsize = dm.axes_manager[0].scale
-    s.axes_manager[0].scale = pixsize
-    s.axes_manager[1].scale = pixsize
-    s.axes_manager[0].units = 'nm'
-    s.axes_manager[1].units = 'nm'
+        dm = signals.DM0
+        logger.info("DM data found in FPD file")
+        if dm.axes_manager[0].units.lower() != 'nm':
+            pixsize = 1000*dm.axes_manager[0].scale
+            logger.info("Changed scale from microns to nanometers")
+            pixsize = dm.axes_manager[0].scale
+
+            s.axes_manager[0].scale = pixsize
+            s.axes_manager[1].scale = pixsize
+            s.axes_manager[0].units = 'nm'
+            s.axes_manager[1].units = 'nm'
+
+            sum_image.axes_manager[0].scale = pixsize
+            sum_image.axes_manager[1].scale = pixsize
+            sum_image.axes_manager[0].units = 'nm'
+            sum_image.axes_manager[1].units = 'nm'
 
     logger.info("Centering diffraction patterns")
     s_com = s.center_of_mass(threshold=com_threshold)
     s_com -= 128
     s = s.shift_diffraction(s_com.inav[0].data, s_com.inav[1].data,
                             interpolation_order=shift_interpolation)
-
-    logger.info("Computing sum pattern")
-    sum_pattern = s.sum((0, 1))
-    sum_pattern.compute()
 
     logger.info("Computing virtual bright-field image")
     bf = s.virtual_bright_field(cx=128, cy=128, r=r_bf)
@@ -62,9 +118,9 @@ def preprocess(datapath="./", mibfile=None, dmfile=None, com_threshold=3,
 
     if save_results:
         if not outpath:
-            outpath = datapath
+            outpath = os.path.split(fpd_filename)[0]
         logger.info("Saving data")
-        rootname = os.path.splitext(os.path.split(mibfile)[1])[0]
+        rootname = os.path.splitext(os.path.split(fpd_filename)[1])[0]
         full_filename_out = outpath + rootname + ".hspy"
         s.save(full_filename_out, overwrite=overwrite)
 
@@ -72,93 +128,75 @@ def preprocess(datapath="./", mibfile=None, dmfile=None, com_threshold=3,
         sum_pattern_out.data = (255*sum_pattern_out.data /
                                 sum_pattern_out.data.max())
         sum_pattern_out.change_dtype('uint8')
-        sum_filename_out = outpath + rootname + "_SumPattern.hspy"
-        sum_pattern.save(sum_filename_out,
-                         overwrite=overwrite)
         sum_filename_out = outpath + rootname + "_SumPattern.png"
+        sum_pattern_out.save(sum_filename_out, overwrite=overwrite)
+
+        sum_image_out = sum_pattern.deepcopy()
+        sum_image_out.data = (255*sum_image_out.data /
+                              sum_image_out.data.max())
+        sum_image_out.change_dtype('uint8')
+        sum_filename_out = outpath + rootname + "_SumImage.png"
         sum_pattern_out.save(sum_filename_out, overwrite=overwrite)
 
         bf_out = bf.deepcopy()
         bf_out.data = 255*bf_out.data/bf_out.data.max()
         bf_out.change_dtype('uint8')
-        bf_filename_out = outpath + rootname + "_BF.hspy"
-        bf.save(bf_filename_out, overwrite=overwrite)
         bf_filename_out = outpath + rootname + "_BF.png"
         bf_out.save(bf_filename_out, overwrite=overwrite)
 
         adf_out = adf.deepcopy()
         adf_out.data = 255*adf_out.data/adf_out.data.max()
         adf_out.change_dtype('uint8')
-        adf_filename_out = outpath + rootname + "_ADF.hspy"
-        adf_out.save(adf_filename_out, overwrite=overwrite)
         adf_filename_out = outpath + rootname + "_ADF.png"
         adf_out.save(adf_filename_out, overwrite=overwrite)
     logger.info("Processing complete")
+
     if return_all:
-        return s, sum_pattern, bf, adf
+        out_dict = {'s': s,
+                    'sum_pattern': sum_pattern,
+                    'sum_image': sum_image,
+                    'bf': bf,
+                    'adf': adf}
+        return out_dict
     else:
         return
 
 
-def preprocess_merlin_data(datapath, savepath=None):
-    mibfiles = glob.glob(datapath + "*.mib")
-    hdrfile = glob.glob(datapath + "*.hdr")[0]
-    dmfile = glob.glob(datapath + "*.dm3")[0]
-    logger.info("Merlin Data File: %s" % mibfiles[0])
-    logger.info("Merlin Header File: %s" % hdrfile)
-    logger.info("DM File: %s" % dmfile)
+def merlin_to_fpd(rootpath=None, savepath=None, keep_unshaped=False,
+                  shutdown=False, discard_first_column=False,
+                  discard_data=False):
+    """
+    Convert FPD files to PyXEM/Hyperspy signals.
 
-    if savepath is None:
-        outpath = ".\\" + os.path.split(mibfiles[0])[1][:-4] + "\\"
-    else:
-        outpath = savepath
-
-    if not os.path.isdir(outpath):
-        os.mkdir(outpath)
-    h5filename = outpath + \
-        os.path.splitext(os.path.split(mibfiles[0])[1])[0] + '.hdf5'
-
-    s = fpd.fpd_file.MerlinBinary(binfns=mibfiles,
-                                  hdrfn=hdrfile,
-                                  dmfns=[dmfile, ],
-                                  ds_start_skip=0,
-                                  row_end_skip=0,
-                                  sort_binary_file_list=False,
-                                  strict=False,
-                                  repack=True)
-
-    s.write_hdf5(h5filename, allow_memmap=False, ow=True)
-    del s
-
-    signals = fpd.fpd_file.fpd_to_hyperspy(h5filename,
-                                           group_names=['Exposure',
-                                                        'fpd_data',
-                                                        'fpd_sum_im',
-                                                        'fpd_sum_diff'])
-
-    exposure_image = signals.Exposure
-    exposure_image = exposure_image.as_signal2D((0, 1))
-
-    sum_image = signals.fpd_sum_im
-    sum_image = sum_image.as_signal2D((0, 1))
-
-    sum_diff = signals.fpd_sum_diff
-    sum_diff = sum_diff.as_signal2D((0, 1))
-
-    rootname = os.path.splitext(h5filename)[0]
-    exposure_image.save(rootname + '_Exposures.hspy', overwrite=True)
-    exposure_image.save(rootname + '_Exposures.tiff', overwrite=True)
-
-    sum_image.save(rootname + '_SumImage.hspy', overwrite=True)
-    sum_image.save(rootname + '_SumImage.tiff', overwrite=True)
-
-    sum_diff.save(rootname + '_SumDiff.hspy', overwrite=True)
-    sum_diff.save(rootname + '_SumDiff.tiff', overwrite=True)
-    return
+    Args
+    ----------
+    rootpath : str
+        Directory where data to be processed is stored. All sub-directories
+        will be searched for Merlin data and processed in turn. If None, a
+        dialog will prompt for the save directory.
+    savepath : str
+        Path where data will be saved.  If None, a dialog will prompt for the
+        save directory.
+    keep_unshaped : bool
+        If True, a second FPD archive will be saved where no reshaping is
+        performed and no frames are discarded.
+    shutdown : bool
+        If True, shutdown the local PC after processing.  Default is False.
+    discard_first_column : bool
+        If True, the first column of data will be discarded after reshaping
+        in an attempt to eliminate the flyback pixels. Default is False.
+    discard_data : bool
+        If True, the local data will be deleted after processing. Default
+        is False.
 
 
-def merlin_to_fpd(rootpath=None, savepath=None, keep_raw=False, shutdown=False,
-                  discard_first_column=False, discard_data=False):
+    Returns
+    ----------
+    h5filenames : list
+        List of the resulting HDF5 filenames.
+
+    """
+
     if not rootpath:
         root = tk.Tk()
         root.withdraw()
@@ -218,19 +256,19 @@ def merlin_to_fpd(rootpath=None, savepath=None, keep_raw=False, shutdown=False,
 
         scanX, scanY, skip_frames, total_frames = get_scan_shape(mibfiles)
 
-        if keep_raw:
-            rawfilename = h5filenames[i][:-5] + "_Raw.hdf5"
-            raw = fpd.fpd_file.MerlinBinary(binfns=mibfiles,
-                                            hdrfn=hdrfile,
-                                            ds_start_skip=0,
-                                            row_end_skip=0,
-                                            sort_binary_file_list=False,
-                                            strict=False,
-                                            repack=True)
+        if keep_unshaped:
+            unshapedfilename = h5filenames[i][:-5] + "_Unshaped.hdf5"
+            unshaped = fpd.fpd_file.MerlinBinary(binfns=mibfiles,
+                                                 hdrfn=hdrfile,
+                                                 ds_start_skip=0,
+                                                 row_end_skip=0,
+                                                 sort_binary_file_list=False,
+                                                 strict=False,
+                                                 repack=True)
 
-            logger.info("Saving unshaped data to file: %s" % rawfilename)
-            raw.write_hdf5(rawfilename, ow=True, allow_memmap=False)
-            del raw
+            logger.info("Saving unshaped data to file: %s" % unshapedfilename)
+            unshaped.write_hdf5(unshapedfilename, ow=True, allow_memmap=False)
+            del unshaped
 
         if save_dm:
             s = fpd.fpd_file.MerlinBinary(binfns=mibfiles,
