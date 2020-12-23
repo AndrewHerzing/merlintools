@@ -22,9 +22,10 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def preprocess(fpd_filename=None, com_threshold=3, shift_interpolation=0,
-               r_bf=15, r_adf_inner=20, r_adf_outer=65, save_results=True,
-               return_all=False, overwrite=False, outpath=None):
+def preprocess(fpd_filename=None, center=True, com_threshold=3,
+               shift_interpolation=0, r_bf=15, r_adf_inner=60,
+               r_adf_outer=100, save_results=True, return_all=False,
+               overwrite=False, outpath=None):
     """
     Convert FPD files to PyXEM/Hyperspy signals.
 
@@ -33,6 +34,9 @@ def preprocess(fpd_filename=None, com_threshold=3, shift_interpolation=0,
     fpd_filename : str
         FPD archive from which to extract signals. If None, a file dialog will
         prompt for the file location.
+    center : bool
+        If True, perform center-of-mass-based centering of the diffraction
+        patterns.
     com_threshold : int or float
         Threshold to apply prior to center of mass calculation.  All values
         below com_threshold*mean will be set to 0.
@@ -79,7 +83,7 @@ def preprocess(fpd_filename=None, com_threshold=3, shift_interpolation=0,
     signals = fpd.fpd_file.fpd_to_hyperspy(fpd_filename)
 
     s = px.ElectronDiffraction2D(signals.fpd_data)
-    sum_pattern = signals.fpd_sum_diff
+    sum_pattern = signals.fpd_sum_dif
     sum_image = signals.fpd_sum_im
 
     try:
@@ -104,11 +108,12 @@ def preprocess(fpd_filename=None, com_threshold=3, shift_interpolation=0,
             sum_image.axes_manager[0].units = 'nm'
             sum_image.axes_manager[1].units = 'nm'
 
-    logger.info("Centering diffraction patterns")
-    s_com = s.center_of_mass(threshold=com_threshold)
-    s_com -= 128
-    s = s.shift_diffraction(s_com.inav[0].data, s_com.inav[1].data,
-                            interpolation_order=shift_interpolation)
+    if center:
+        logger.info("Centering diffraction patterns")
+        s_com = s.center_of_mass(threshold=com_threshold)
+        s_com -= 128
+        s = s.shift_diffraction(s_com.inav[0].data, s_com.inav[1].data,
+                                interpolation_order=shift_interpolation)
 
     logger.info("Computing virtual bright-field image")
     bf = s.virtual_bright_field(cx=128, cy=128, r=r_bf)
@@ -118,7 +123,7 @@ def preprocess(fpd_filename=None, com_threshold=3, shift_interpolation=0,
 
     if save_results:
         if not outpath:
-            outpath = os.path.split(fpd_filename)[0]
+            outpath = os.path.split(fpd_filename)[0] + '/'
         logger.info("Saving data")
         rootname = os.path.splitext(os.path.split(fpd_filename)[1])[0]
         full_filename_out = outpath + rootname + ".hspy"
@@ -131,7 +136,7 @@ def preprocess(fpd_filename=None, com_threshold=3, shift_interpolation=0,
         sum_filename_out = outpath + rootname + "_SumPattern.png"
         sum_pattern_out.save(sum_filename_out, overwrite=overwrite)
 
-        sum_image_out = sum_pattern.deepcopy()
+        sum_image_out = sum_image.deepcopy()
         sum_image_out.data = (255*sum_image_out.data /
                               sum_image_out.data.max())
         sum_image_out.change_dtype('uint8')
