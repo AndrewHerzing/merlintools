@@ -237,7 +237,8 @@ def get_scan_shape(mibfiles):
     exposures_round = np.round(exposures, 4)
     vals, counts = np.unique(exposures_round, return_counts=True)
     exposure_time = vals[counts.argmax()]
-    skip_frames = np.where(exposures_round == exposure_time)[0][0] - 1
+    skip_frames = np.where(exposures_round >= 1.5*exposure_time)[0][0]
+    # skip_frames = np.where(exposures_round == exposure_time)[0][0] - 1
     logger.info("Extra frames at beginning: %s" % skip_frames)
 
     test_frames = np.where(exposures_round > 1.5*exposure_time)[0]
