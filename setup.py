@@ -16,7 +16,7 @@ setup(
             'tqdm',
             ],
     extras_require={
-            'pyxem',
+            'Full': ["pyxem", ],
             },
     author='Andrew Herzing',
     author_email='andrew.herzing@nist.gov',
