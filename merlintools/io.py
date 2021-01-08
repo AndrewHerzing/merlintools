@@ -233,24 +233,30 @@ def get_scan_shape(mibfiles):
                        (data_length*n_detector_pix + header_length))
     logger.info("Total frames: %s" % total_frames)
 
-    exposures = get_exposure_times(mibfiles[0], int(0.2*total_frames))
-    exposures_round = np.round(exposures, 4)
-    vals, counts = np.unique(exposures_round, return_counts=True)
-    exposure_time = vals[counts.argmax()]
-    skip_frames = np.where(exposures_round >= 1.5*exposure_time)[0][0]
-    # skip_frames = np.where(exposures_round == exposure_time)[0][0] - 1
-    logger.info("Extra frames at beginning: %s" % skip_frames)
+    exp = 1000*get_exposure_times(mibfiles)
+    exp_round = np.round(exp, 1)
+    vals, counts = np.unique(exp_round, return_counts=True)
+    exposure_time, flyback_time = vals[counts.argsort()[::-1]][0:2]
+    flyback_pixels = np.where(exp_round == flyback_time)[0]
+    scan_width = np.diff(flyback_pixels)[0]
+    scan_height = len(flyback_pixels) + 1
+    skip_frames = flyback_pixels[0] - scan_width
+    extra_frames = total_frames - skip_frames - scan_width * scan_height
 
-    test_frames = np.where(exposures_round > 1.5*exposure_time)[0]
-    scan_width = test_frames[-1] - test_frames[-2]
-    scan_height = int(np.round(total_frames/scan_width))
+    logger.info("Exposure time (ms): %s" % exposure_time)
+    logger.info("Flyback time (ms): %s" % flyback_time)
+    logger.info("Extra frames at beginning: %s" % skip_frames)
     logger.info("Scan width based on flyback: %s pixels" % scan_width)
     logger.info("Scan height based on flyback: %s pixels" % scan_height)
 
+    if extra_frames >= 0:
+        logger.info("Extra frames at end: %s" % extra_frames)
+    else:
+        logger.warning("Missing %s frames at end of dataset!"
+                       % (-extra_frames))
+
     scanXalu = [np.arange(0, scan_width), 'x', 'pixels']
     scanYalu = [np.arange(0, scan_height), 'y', 'pixels']
-    logger.info("Extra frames at end: %s" %
-                (total_frames-skip_frames-scan_width*scan_height))
     return scanXalu, scanYalu, skip_frames, total_frames
 
 
