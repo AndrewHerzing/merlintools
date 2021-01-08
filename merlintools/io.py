@@ -65,6 +65,8 @@ def get_exposure_times(mibfiles, n=None):
                 line = h.readline(200)
             exposures[i] = np.float32(line.split(',')[10])*1000
     else:
+        if type(mibfiles) is list:
+            mibfiles = mibfiles[0]
         with open(mibfiles, 'rb') as h:
             hdr_temp = np.fromfile(h, 'int8', 384)
         hdr_temp = ''.join([chr(item) for item in hdr_temp]).split(',')
