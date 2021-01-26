@@ -233,11 +233,7 @@ def get_scan_shape(mibfiles):
         data_length = 4
     if len(mibfiles) == 1:
         total_frames = int(os.path.getsize(mibfiles[0]) /
-<<<<<<< HEAD
                            (data_length*n_detector_pix + header_length))
-=======
-                        (data_length*n_detector_pix + header_length))
->>>>>>> 46805d78137b35b6d3909b4bb527d837532b8e1b
     else:
         total_frames = len(mibfiles)
     logger.info("Total frames: %s" % total_frames)
