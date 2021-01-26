@@ -1,6 +1,9 @@
+import os
 import hyperspy.api as hs
 import numpy as np
 import fpd.fpd_processing as fpdp
+import fpd.fpd_file as fpdf
+from scipy import ndimage
 
 
 def get_radial_profile(ds, com_yx):
@@ -24,3 +27,75 @@ def get_radial_profile(ds, com_yx):
     result = result.reshape([ds.shape[0], ds.shape[1], min_length])
     s = hs.signals.Signal1D(result)
     return s
+
+
+def shift_func(image, scanYind, scanXind, shift_array, sub_pixel=True,
+               interpolation=3):
+    if sub_pixel:
+        syx = shift_array[:, scanYind, scanXind]
+    else:
+        syx = np.int32(np.round(shift_array[:, scanYind, scanXind], 0))
+        interpolation = 0
+    new_im = ndimage.shift(image, -syx, order=interpolation)
+    return new_im
+
+
+def align_merlin(h5filename, sub_pixel=True, interpolation=3):
+    coms_file = os.path.splitext(h5filename)[0] + "_CoMs.npy"
+    shifts_file = os.path.splitext(h5filename)[0] + "_Shifts.npy"
+    ali_file = os.path.splitext(h5filename)[0] + "_Aligned.hdf5"
+
+    nt = fpdf.fpd_to_tuple(h5filename, fpd_check=False)
+    sum_dif = nt.fpd_sum_dif.data
+    ds = nt.fpd_data.data
+    h5f = nt.file
+
+    idx_x, idx_y = np.int32(np.array(ds.shape[0:2])/2)
+    thresh_val = 0.5 * ds[idx_x, idx_y, :, :].max()
+    cyx, cr = fpdp.find_circ_centre(sum_dif, 10, (6, 20, 2), pct=90,
+                                    spf=1, plot=False)
+
+    mask = fpdp.synthetic_aperture(shape=ds.shape[-2:], cyx=cyx,
+                                   rio=(0, cr*2.5), sigma=0)[0]
+    mask = np.ceil(mask)
+
+    com_yx = fpdp.center_of_mass(ds, nr=None, nc=None, aperture=mask,
+                                 progress_bar=False, print_stats=False,
+                                 parallel=False, thr=thresh_val)
+    h5f.close()
+
+    np.save(coms_file, com_yx)
+    com_yx[np.where(np.isnan(com_yx[:, :, :]))] = 128.
+
+    shifts_yx = com_yx - 128.
+    np.save(shifts_file, shifts_yx)
+    fpdf.make_updated_fpd_file(h5filename, ali_file, shift_func,
+                               func_kwargs={'shift_array': shifts_yx,
+                                            'sub_pixel': sub_pixel,
+                                            'interpolation': interpolation},
+                               ow=True, progress_bar=False)
+    return
+
+
+def get_segmented_annular_aperture(ds, cyx=(128, 128),
+                                   rio=[[0, 20], [30, 60]]):
+    rio = np.array(rio)
+    rio = np.vstack((rio, np.zeros([3, 2])))
+    rio[2:, :] = rio[1, :]
+
+    aps = fpdp.synthetic_aperture(shape=ds.shape[-2:], cyx=(128, 128), aaf=1,
+                                  rio=rio, sigma=0)
+
+    aps[1, 128:, :] = 0
+    aps[1, :, 128:] = 0
+
+    aps[2, 128:, :] = 0
+    aps[2, :, :128] = 0
+
+    aps[3, :128, :] = 0
+    aps[3, :, 128:] = 0
+
+    aps[4, :128, :] = 0
+    aps[4, :, :128] = 0
+
+    return aps
