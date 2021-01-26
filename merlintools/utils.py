@@ -35,9 +35,30 @@ def mrads_to_hkl(angle, voltage):
     return d
 
 
+def mrads_to_q(angle, voltage):
+    """
+    Convert from an angular value (mrads) to momentum value (nm^-1)
+
+    Args
+    ----------
+    mrads : float
+        Scattering angle in mrads
+    voltage : float or int
+        Electron beam voltage (kV)
+
+    Returns
+    ----------
+    q : float
+        Momentum transfer (2*pi*k) in inverse nanometers
+    """
+    wavelength = voltage_to_wavelength(voltage, True)
+    q = 4 * np.pi / wavelength * np.sin(angle / 2000)
+    return q
+
+
 def mrads_to_k(angle, voltage):
     """
-    Convert from an angular measurement (mrads) to reciprocal space (nm^-1)
+    Convert from an angular value (mrads) to reciprocal space (nm^-1)
 
     Args
     ----------
@@ -49,10 +70,10 @@ def mrads_to_k(angle, voltage):
     Returns
     ----------
     k : float
-        Reciprocal lattice spacing in either inverse nanometers
+        Reciprocal lattice spacing in inverse nanometers
     """
     wavelength = voltage_to_wavelength(voltage, True)
-    k = (2 * np.sin(angle / 1000)) / wavelength
+    k = 2 / wavelength * np.sin(angle / 2000)
     return k
 
 
@@ -156,6 +177,8 @@ cal_300kV = {'77': 0.517,
 
 def get_calibration(beam_energy, cl, units='mrads'):
     beam_energy = int(beam_energy)
+    if beam_energy == 303:
+        beam_energy = 300
     cl = int(cl)
 
     if beam_energy == 80:
@@ -165,8 +188,8 @@ def get_calibration(beam_energy, cl, units='mrads'):
     elif beam_energy == 300:
         calibration_dictionary = cal_300kV
     else:
-        raise(ValueError, "No calibration for beam energy: %s. "
-                          "Must be 80, 200, or 300." % str(beam_energy))
+        raise ValueError("No calibration for beam energy: %s. "
+                         "Must be 80, 200, or 300." % str(beam_energy))
     if str(cl) in calibration_dictionary.keys():
         calibration = calibration_dictionary[str(cl)]
         logger.info("Camera length found in calibration table.")
@@ -179,16 +202,13 @@ def get_calibration(beam_energy, cl, units='mrads'):
     if units == 'mrads':
         pass
     elif units == 'q':
-        wavelength = voltage_to_wavelength(beam_energy, True)
-        calibration = (4 * np.pi * np.sin(calibration / 2000))\
-            / (10 * wavelength)
-    elif units == 'angstroms':
-        wavelength = voltage_to_wavelength(beam_energy, True)
-        calibration = (4 * np.pi * np.sin(calibration / 2000))\
-            / (10 * wavelength)
-        calibration = calibration / (2*np.pi)
+        wavelength = 10 * voltage_to_wavelength(beam_energy, True)
+        calibration = (4 * np.pi * np.sin(calibration / 2000)) / wavelength
+    elif units == 'k':
+        wavelength = 10 * voltage_to_wavelength(beam_energy, True)
+        calibration = (2 * np.sin(calibration / 2000)) / wavelength
+        # calibration = calibration / (2*np.pi)
     else:
-        raise(ValueError,
-              "Units (%s) not understood. "
-              "Must be 'mrads', 'q', or 'angstroms'" % units)
+        raise ValueError("Units (%s) not understood. "
+                         "Must be 'mrads', 'q', or 'k'" % units)
     return calibration

@@ -7,6 +7,8 @@ from tkinter import filedialog
 import fpd
 import glob
 import h5py
+import hyperspy.api as hs
+from merlintools.utils import get_calibration
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -294,11 +296,20 @@ def get_merlin_data(datapath=None, discard_first_column=False):
     scanX, scanY, skip_frames, total_frames = get_scan_shape(mibfiles)
 
     if dm_exists:
+        dm = hs.load(dmfile)
+        cl = dm.metadata['Acquisition_instrument']['TEM']['camera_length']
+        ht = dm.metadata['Acquisition_instrument']['TEM']['beam_energy']
+        calibration = get_calibration(ht, cl, 'k')
+        axis = calibration*np.arange(-128, 128, 1)
+        detX = [axis, "kx", "$A^{-1}$"]
+        detY = [axis, "ky", "$A^{-1}$"]
         s = fpd.fpd_file.MerlinBinary(binfns=mibfiles,
                                       hdrfn=hdrfile,
                                       ds_start_skip=skip_frames,
                                       row_end_skip=0,
                                       dmfns=dmfile[0],
+                                      detXalu=detX,
+                                      detYalu=detY,
                                       sort_binary_file_list=False,
                                       strict=False,
                                       repack=True)
@@ -326,16 +337,16 @@ def get_microscope_parameters(data):
         cl = np.float(data["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
                            "Microscope Info/STEM Camera Length"][...])
         ht = np.float(data["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
-                           "Microscope Info/Voltage"][...])
+                           "Microscope Info/Voltage"][...])/1000
     elif isinstance(data, str):
         with h5py.File(data, 'r') as h5:
             cl = np.float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
                              "Microscope Info/STEM Camera Length"][...])
             ht = np.float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
-                             "Microscope Info/Voltage"][...])
+                             "Microscope Info/Voltage"][...])/1000
     else:
         cl = np.float(data.DM0[4]["ImageList/TagGroup0/ImageTags/"
                                   "Microscope Info/STEM Camera Length"][...])
         ht = np.float(data.DM0[4]["ImageList/TagGroup0/ImageTags/"
-                                  "Microscope Info/Voltage"][...])
+                                  "Microscope Info/Voltage"][...])/1000
     return ht, cl
