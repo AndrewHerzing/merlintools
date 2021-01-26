@@ -128,36 +128,35 @@ def extrapolate_calibration(cl, calibrations):
     xdata = [int(i) for i in calibrations.keys()]
     ydata = [calibrations[i] for i in calibrations.keys()]
     res, cov = optimize.curve_fit(fit_func, xdata, ydata)
-    return res
+    return fit_func(cl, *res)
 
 
 # Calibrations in mrads/pixel
-cal_80kV = {'38': 1.51,
-            '48': 1.13,
-            '60': 0.91,
-            '77': 0.68,
-            '100': 0.52,
-            '130': 0.40,
-            '160': 0.32,
-            '195': 0.26,
-            '245': 0.21,
-            '300': 0.18,
-            '380': 0.14}
+cal_80kV = {'38': 1.511,
+            '48': 1.133,
+            '60': 0.907,
+            '77': 0.680,
+            '100': 0.523,
+            '130': 0.400,
+            '160': 0.324,
+            '195': 0.262,
+            '245': 0.209,
+            '300': 0.177,
+            '380': 0.139}
 
 cal_200kV = {}
 
-cal_300kV = {'77': 0.52,
-             '100': 0.41,
-             '130': 0.32,
-             '160': 0.26,
-             '195': 0.21,
-             '245': 0.17,
-             '300': 0.16}
+cal_300kV = {'77': 0.517,
+             '130': 0.322,
+             '160': 0.262,
+             '195': 0.211,
+             '245': 0.166,
+             '300': 0.162}
 
 
 def get_calibration(beam_energy, cl, units='mrads'):
     beam_energy = int(beam_energy)
-    cl = str(int(cl))
+    cl = int(cl)
 
     if beam_energy == 80:
         calibration_dictionary = cal_80kV
@@ -168,11 +167,12 @@ def get_calibration(beam_energy, cl, units='mrads'):
     else:
         raise(ValueError, "No calibration for beam energy: %s. "
                           "Must be 80, 200, or 300." % str(beam_energy))
-    if cl in calibration_dictionary.keys():
-        calibration = calibration_dictionary[cl]
+    if str(cl) in calibration_dictionary.keys():
+        calibration = calibration_dictionary[str(cl)]
         logger.info("Camera length found in calibration table.")
     else:
-        calibration = extrapolate_calibration(cl, calibration_dictionary)
+        calibration =\
+            np.round(extrapolate_calibration(cl, calibration_dictionary), 3)
         logger.info("Camera length not in calibration table. "
                     "Calibration will be extrapolated.")
 
@@ -180,10 +180,12 @@ def get_calibration(beam_energy, cl, units='mrads'):
         pass
     elif units == 'q':
         wavelength = voltage_to_wavelength(beam_energy, True)
-        calibration = (2 * np.sin(calibration / 1000)) / wavelength
+        calibration = (4 * np.pi * np.sin(calibration / 2000))\
+            / (10 * wavelength)
     elif units == 'angstroms':
         wavelength = voltage_to_wavelength(beam_energy, True)
-        calibration = (2 * np.sin(calibration / 1000)) / wavelength
+        calibration = (4 * np.pi * np.sin(calibration / 2000))\
+            / (10 * wavelength)
         calibration = calibration / (2*np.pi)
     else:
         raise(ValueError,
