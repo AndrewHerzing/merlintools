@@ -4,6 +4,7 @@ import numpy as np
 import fpd.fpd_processing as fpdp
 import fpd.fpd_file as fpdf
 from scipy import ndimage
+import matplotlib.pylab as plt
 
 
 def get_radial_profile(ds, com_yx):
@@ -78,24 +79,29 @@ def align_merlin(h5filename, sub_pixel=True, interpolation=3):
 
 
 def get_segmented_annular_aperture(ds, cyx=(128, 128),
-                                   rio=[[0, 20], [30, 60]]):
+                                   rio=[[0, 20], [30, 60]], plot_result=False,
+                                   sigma=0, aaf=3):
     rio = np.array(rio)
-    rio = np.vstack((rio, np.zeros([3, 2])))
+    rio = np.vstack((rio, np.zeros([4, 2])))
     rio[2:, :] = rio[1, :]
 
-    aps = fpdp.synthetic_aperture(shape=ds.shape[-2:], cyx=(128, 128), aaf=1,
-                                  rio=rio, sigma=0)
-
-    aps[1, 128:, :] = 0
-    aps[1, :, 128:] = 0
+    aps = fpdp.synthetic_aperture(shape=ds.shape[-2:], cyx=(128, 128), rio=rio,
+                                  sigma=sigma, aaf=aaf)
 
     aps[2, 128:, :] = 0
-    aps[2, :, :128] = 0
+    aps[2, :, 128:] = 0
 
-    aps[3, :128, :] = 0
-    aps[3, :, 128:] = 0
+    aps[3, 128:, :] = 0
+    aps[3, :, :128] = 0
 
     aps[4, :128, :] = 0
-    aps[4, :, :128] = 0
+    aps[4, :, 128:] = 0
 
+    aps[5, :128, :] = 0
+    aps[5, :, :128] = 0
+
+    if plot_result:
+        plt.figure()
+        plt.imshow(aps[0] + 1.5*aps[2] + 2*aps[3] + 2.5*aps[4] + 3*aps[5],
+                   cmap='nipy_spectral', vmin=0.5, vmax=3.5)
     return aps

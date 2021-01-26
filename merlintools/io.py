@@ -6,6 +6,7 @@ import tkinter as tk
 from tkinter import filedialog
 import fpd
 import glob
+import h5py
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -318,3 +319,23 @@ def get_merlin_data(datapath=None, discard_first_column=False):
                                       strict=False,
                                       repack=True)
     return s
+
+
+def get_microscope_parameters(data):
+    if isinstance(data, h5py.File):
+        cl = np.float(data["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
+                           "Microscope Info/STEM Camera Length"][...])
+        ht = np.float(data["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
+                           "Microscope Info/Voltage"][...])
+    elif isinstance(data, str):
+        with h5py.File(data, 'r') as h5:
+            cl = np.float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
+                             "Microscope Info/STEM Camera Length"][...])
+            ht = np.float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
+                             "Microscope Info/Voltage"][...])
+    else:
+        cl = np.float(data.DM0[4]["ImageList/TagGroup0/ImageTags/"
+                                  "Microscope Info/STEM Camera Length"][...])
+        ht = np.float(data.DM0[4]["ImageList/TagGroup0/ImageTags/"
+                                  "Microscope Info/Voltage"][...])
+    return ht, cl
