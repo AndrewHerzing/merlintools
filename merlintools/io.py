@@ -231,8 +231,11 @@ def get_scan_shape(mibfiles):
         data_length = 2
     elif mib_hdr['PixDepth'] == 'U32':
         data_length = 4
-    total_frames = int(os.path.getsize(mibfiles[0]) /
-                       (data_length*n_detector_pix + header_length))
+    if len(mibfiles) == 1:
+        total_frames = int(os.path.getsize(mibfiles[0]) /
+                           (data_length*n_detector_pix + header_length))
+    else:
+        total_frames = len(mibfiles)
     logger.info("Total frames: %s" % total_frames)
 
     exp = 1000*get_exposure_times(mibfiles)
