@@ -13,6 +13,38 @@ c = 2.998e8         # Speed of light in vacuum (m/s)
 Na = 6.0221409e23   # Avogadro's number
 
 
+def get_lattice_spacings(material):
+    """
+    Return a dictionary of primary lattice spacings for a given material
+
+    Args
+    ----------
+    material : str
+        Identity of material for which to return hkl spacings.
+        Must be 'AuPd', 'Au', or 'Si'.
+
+    Returns
+    ----------
+    d : float
+        Lattice spacing in nanometers
+    """
+
+    if material.lower() == 'aupd':
+        hkls = {'111': 2.31, '200': 2.00, '220': 1.41,
+                '311': 1.21, '222': 1.15}
+        return hkls
+    elif material.lower() == 'au':
+        hkls = {'111': 2.36, '200': 2.04, '220': 1.44,
+                '311': 1.23, '222': 1.18}
+        return hkls
+    elif material.lower() == 'si':
+        hkls = {'111': 3.14, '200': 2.72, '220': 1.92,
+                '311': 1.64, '222': 1.57}
+        return hkls
+    else:
+        raise(ValueError, "Unknown material.  Must be 'Au-Pd', 'Au', or 'Si'")
+
+
 def mrads_to_hkl(angle, voltage):
     """
     Convert from an diffraction angle (mrads) to lattice spacing (nm)
