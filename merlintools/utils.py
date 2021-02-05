@@ -2,6 +2,10 @@ import numpy as np
 from scipy import optimize
 import logging
 import json
+import os
+import merlintools
+
+merlintools_path = os.path.dirname(merlintools.__file__)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -186,17 +190,20 @@ def extrapolate_calibration(cl, calibrations):
 
 
 # Calibrations in mrads/pixel
-with open('./calibrations/80kV_calibrations.json', 'r') as fp:
+calibration_file_80kV = os.path.join(merlintools_path, "calibrations",
+                                     "80kV_calibrations.json")
+with open(calibration_file_80kV, 'r') as fp:
     cal_80kV = json.load(fp)
 
-cal_200kV = {}
+calibration_file_200kV = os.path.join(merlintools_path, "calibrations",
+                                      "200kV_calibrations.json")
+with open(calibration_file_200kV, 'r') as fp:
+    cal_200kV = json.load(fp)
 
-cal_300kV = {'77': 0.517,
-             '130': 0.322,
-             '160': 0.262,
-             '195': 0.211,
-             '245': 0.166,
-             '300': 0.162}
+calibration_file_300kV = os.path.join(merlintools_path, "calibrations",
+                                      "300kV_calibrations.json")
+with open(calibration_file_300kV, 'r') as fp:
+    cal_300kV = json.load(fp)
 
 
 def get_calibration(beam_energy, cl, units='mrads'):
