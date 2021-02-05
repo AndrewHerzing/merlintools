@@ -1,6 +1,7 @@
 import numpy as np
 from scipy import optimize
 import logging
+import json
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -185,17 +186,8 @@ def extrapolate_calibration(cl, calibrations):
 
 
 # Calibrations in mrads/pixel
-cal_80kV = {'38': 1.511,
-            '48': 1.133,
-            '60': 0.907,
-            '77': 0.680,
-            '100': 0.523,
-            '130': 0.400,
-            '160': 0.324,
-            '195': 0.262,
-            '245': 0.209,
-            '300': 0.177,
-            '380': 0.139}
+with open('./calibrations/80kV_calibrations.json', 'r') as fp:
+    cal_80kV = json.load(fp)
 
 cal_200kV = {}
 
