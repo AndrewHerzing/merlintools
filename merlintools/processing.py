@@ -85,7 +85,7 @@ def get_segmented_annular_aperture(ds, cyx=(128, 128),
     rio = np.vstack((rio, np.zeros([4, 2])))
     rio[2:, :] = rio[1, :]
 
-    aps = fpdp.synthetic_aperture(shape=ds.shape[-2:], cyx=(128, 128), rio=rio,
+    aps = fpdp.synthetic_aperture(shape=ds.shape[-2:], cyx=cyx, rio=rio,
                                   sigma=sigma, aaf=aaf)
 
     aps[2, 128:, :] = 0
