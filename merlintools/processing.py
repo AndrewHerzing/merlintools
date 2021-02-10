@@ -5,6 +5,7 @@ import fpd.fpd_processing as fpdp
 import fpd.fpd_file as fpdf
 from scipy import ndimage
 import matplotlib.pylab as plt
+from emtools import color
 
 
 def get_radial_profile(ds, com_yx):
@@ -80,7 +81,7 @@ def align_merlin(h5filename, sub_pixel=True, interpolation=3):
 
 def get_segmented_annular_aperture(ds, cyx=(128, 128),
                                    rio=[[0, 20], [30, 60]], plot_result=False,
-                                   sigma=0, aaf=3):
+                                   sigma=0, aaf=3, axis=None, color_list=None):
     rio = np.array(rio)
     rio = np.vstack((rio, np.zeros([4, 2])))
     rio[2:, :] = rio[1, :]
@@ -101,7 +102,13 @@ def get_segmented_annular_aperture(ds, cyx=(128, 128),
     aps[5, :, :128] = 0
 
     if plot_result:
-        plt.figure()
-        plt.imshow(aps[0] + 1.5*aps[2] + 2*aps[3] + 2.5*aps[4] + 3*aps[5],
-                   cmap='nipy_spectral', vmin=0.5, vmax=3.5)
+        if color_list is None:
+            color_list = ['magenta', 'red', 'green', 'blue', 'yellow']
+        rgb = color.merge_color_channels(aps[[0, 2, 3, 4, 5], :, :],
+                                         color_list=color_list)
+        if axis:
+            axis.imshow(rgb)
+        else:
+            plt.figure()
+            plt.imshow(rgb)
     return aps
