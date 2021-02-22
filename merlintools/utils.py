@@ -178,6 +178,30 @@ def get_relativistic_mass(voltage):
     return rel_mass
 
 
+def calc_electron_dose(probe_current, dwell_time, pixel_size):
+    """
+    Calculate electron dose given probe current, dwell time, and pixel size
+
+    Args
+    ---------
+    probe_current : float
+        Probe current in amps
+
+    dwell_time : float
+        Dwell time per pixel in seconds
+
+    pixel_size : float
+        Pixel size in nanometers
+
+    Returns
+    ----------
+    dose : float
+        Calculated electron dose in electrons per square nanometer
+    """
+    dose = 6.242e18 * probe_current * dwell_time / pixel_size**2
+    return dose
+
+
 def fit_func(x, A, exp):
     return A*x**exp
 
