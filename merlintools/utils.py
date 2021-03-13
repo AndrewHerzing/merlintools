@@ -231,6 +231,28 @@ with open(calibration_file_300kV, 'r') as fp:
 
 
 def get_calibration(beam_energy, cl, units='mrads'):
+    """
+    Returns reciprocal space calibration given the beam energy and
+    camera length.
+
+    Args
+    ----------
+    beam_energy : float
+        Beam energy in keV
+
+    cl : float
+        Camera length in mm
+
+    units : str
+        Units for returned calibration.  Must be 'mrads', 'q', or 'k'. q and k
+        are both in A^-1/pixel
+
+    Returns
+    ----------
+    calibration : float
+        Reciprocal space calibration in mrads/pixel or A^-1/pixel
+    """
+
     beam_energy = int(beam_energy)
     if beam_energy == 303:
         beam_energy = 300
@@ -262,7 +284,6 @@ def get_calibration(beam_energy, cl, units='mrads'):
     elif units == 'k':
         wavelength = 10 * voltage_to_wavelength(beam_energy, True)
         calibration = (2 * np.sin(calibration / 2000)) / wavelength
-        # calibration = calibration / (2*np.pi)
     else:
         raise ValueError("Units (%s) not understood. "
                          "Must be 'mrads', 'q', or 'k'" % units)
