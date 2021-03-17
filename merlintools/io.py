@@ -2,13 +2,7 @@ import re
 import numpy as np
 import os
 import logging
-import tkinter as tk
-from tkinter import filedialog
-import fpd
-import glob
 import h5py
-import hyperspy.api as hs
-from merlintools.utils import get_calibration
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -266,70 +260,6 @@ def get_scan_shape(mibfiles):
     scanXalu = [np.arange(0, scan_width), 'x', 'pixels']
     scanYalu = [np.arange(0, scan_height), 'y', 'pixels']
     return scanXalu, scanYalu, skip_frames, total_frames
-
-
-def get_merlin_data(datapath=None, discard_first_column=False):
-    if not datapath:
-        root = tk.Tk()
-        root.withdraw()
-        root.call('wm', 'attributes', '.', '-topmost', True)
-        datapath = filedialog.askdirectory(initialdir="c:/users/aherzing/data",
-                                           title="Select data directory...")
-        datapath = datapath + "/"
-
-    mibfiles = glob.glob(datapath + "*.mib")
-    mibfiles = [i.replace('\\', '/') for i in mibfiles]
-    hdrfile = glob.glob(datapath + "*.hdr")[0]
-    hdrfile = hdrfile.replace('\\', '/')
-    dmfile = glob.glob(datapath + "*.dm*")
-    dmfile = [i.replace('\\', '/') for i in dmfile]
-
-    logger.info("Merlin Data File: %s" % mibfiles[0])
-    logger.info("Merlin Header File: %s" % hdrfile)
-
-    if len(dmfile) > 0:
-        logger.info("Found DM file: %s" % dmfile[0])
-        dm_exists = True
-    else:
-        dm_exists = False
-
-    scanX, scanY, skip_frames, total_frames = get_scan_shape(mibfiles)
-
-    if dm_exists:
-        dm = hs.load(dmfile)
-        cl = dm.metadata['Acquisition_instrument']['TEM']['camera_length']
-        ht = dm.metadata['Acquisition_instrument']['TEM']['beam_energy']
-        calibration = get_calibration(ht, cl, 'k')
-        axis = calibration*np.arange(-128, 128, 1)
-        detX = [axis, "kx", "$A^{-1}$"]
-        detY = [axis, "ky", "$A^{-1}$"]
-        s = fpd.fpd_file.MerlinBinary(binfns=mibfiles,
-                                      hdrfn=hdrfile,
-                                      ds_start_skip=skip_frames,
-                                      row_end_skip=0,
-                                      dmfns=dmfile[0],
-                                      detXalu=detX,
-                                      detYalu=detY,
-                                      sort_binary_file_list=False,
-                                      strict=False,
-                                      repack=True)
-    else:
-        if discard_first_column:
-            skip_frames += 1
-            scanX[0] = scanX[0][:-1]
-            end_skip = 1
-        else:
-            end_skip = 0
-        s = fpd.fpd_file.MerlinBinary(binfns=mibfiles,
-                                      hdrfn=hdrfile,
-                                      ds_start_skip=skip_frames,
-                                      row_end_skip=end_skip,
-                                      scanXalu=scanX,
-                                      scanYalu=scanY,
-                                      sort_binary_file_list=False,
-                                      strict=False,
-                                      repack=True)
-    return s
 
 
 def get_microscope_parameters(data):
