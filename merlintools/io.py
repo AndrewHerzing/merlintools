@@ -242,7 +242,7 @@ def get_scan_shape(mibfiles):
     logger.info("Total frames: %s" % total_frames)
 
     exp = 1000*get_exposure_times(mibfiles)
-    exp_round = np.round(exp, 1)
+    exp_round = np.round(exp, 0)
     vals, counts = np.unique(exp_round, return_counts=True)
     exposure_time, flyback_time = vals[counts.argsort()[::-1]][0:2]
     flyback_pixels = np.where(exp_round == flyback_time)[0]
