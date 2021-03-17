@@ -7,6 +7,7 @@ import tkinter as tk
 from tkinter import filedialog
 import time
 import shutil
+from pathlib import Path
 
 try:
     optional_package = None
@@ -169,9 +170,10 @@ def preprocess(fpd_filename=None, center=True, com_threshold=3,
 
 def merlin_to_fpd(rootpath=None, savepath=None, keep_unshaped=False,
                   shutdown=False, discard_first_column=False,
-                  discard_data=False, use_remote_temp=True):
+                  discard_data=False):
     """
-    Convert FPD files to PyXEM/Hyperspy signals.
+    Convert Merlin .MIB/.HDR files to FPD files and transfer to a storage
+    location.
 
     Args
     ----------
@@ -193,12 +195,6 @@ def merlin_to_fpd(rootpath=None, savepath=None, keep_unshaped=False,
     discard_data : bool
         If True, the local data will be deleted after processing. Default
         is False.
-    use_remote_temp : bool
-        If True, perform data processing in temporary directory of datapath.
-        Default is True. Set to False if write permission on datapath is not
-        available.  In this case, temporary data will be written to the
-        current working directory.
-
 
     Returns
     ----------
@@ -224,12 +220,14 @@ def merlin_to_fpd(rootpath=None, savepath=None, keep_unshaped=False,
                                            title="Select save directory...")
         savepath = savepath + "/"
 
-    if use_remote_temp:
-        temp_dir = os.path.dirname(os.path.dirname(rootpath)) +\
-            time.strftime("/%Y%m%d_%H%M%S_FPD_EXPORT/")
+    root_parent = str(Path(rootpath).parent.absolute())
+
+    if os.access("/", os.W_OK):
+        temp_dir = root_parent +\
+            time.strftime("/%Y_%m_%d_%H%M%S_FPD_EXPORT/")
     else:
-        temp_dir = os.path.dirname(os.path.dirname(savepath)) +\
-            time.strftime("/%Y%m%d_%H%M%S_FPD_EXPORT/")
+        temp_dir = os.getcwd() +\
+            time.strftime("/%Y_%m_%d_%H%M%S_FPD_EXPORT/")
     if savepath[-1:] != "/":
         savepath = savepath + "/"
 
@@ -322,7 +320,6 @@ def merlin_to_fpd(rootpath=None, savepath=None, keep_unshaped=False,
         s.write_hdf5(tempfilenames[i], ow=True, allow_memmap=False)
         del s
 
-    # savepath = savepath + time.strftime("%Y%m%d_%H%M%S/")
     shutil.copytree(temp_dir, savepath)
     if discard_data:
         shutil.rmtree(rootpath)
