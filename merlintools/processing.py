@@ -5,7 +5,7 @@ import fpd.fpd_processing as fpdp
 import fpd.fpd_file as fpdf
 from scipy import ndimage
 import matplotlib.pylab as plt
-from emtools import color
+from merlintools import color
 
 
 def get_radial_profile(ds, com_yx):
