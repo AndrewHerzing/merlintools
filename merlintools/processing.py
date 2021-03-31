@@ -112,3 +112,15 @@ def get_segmented_annular_aperture(ds, cyx=(128, 128),
             plt.figure()
             plt.imshow(rgb)
     return aps
+
+
+def get_max_dps(data_4d, image, n_pix=100):
+    dps = np.zeros([n_pix, data_4d.shape[2], data_4d.shape[3]])
+    max_locs = image.ravel().argsort()[::-1]
+
+    for i in range(0, n_pix):
+        row, col = np.unravel_index(max_locs[i], [128, 128])
+        dps[i] = data_4d[0][row, col]
+
+    dps = hs.signals.Signal2D(dps)
+    return dps
