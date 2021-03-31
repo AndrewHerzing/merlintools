@@ -219,6 +219,23 @@ def parse_mib_header(mibfile):
 
 
 def get_scan_shape(mibfiles):
+    """
+    Determine scan shape from file size and exposure times
+
+    rgs
+    ----------
+    mibfiles : list
+        List of MIB files
+
+    Returns
+    ----------
+    scanXalu, scanYalu : list
+        List providing the scan axes parameters. Format: [axis, name, units]
+    skip_frames : int
+        Number of extra frames at the beginning of the scan
+    total_frames : int
+        Total number of frames in scan
+    """
     mib_hdr = parse_mib_header(mibfiles[0])
     n_detector_pix = mib_hdr['PixDimX'] * mib_hdr['PixDimY']
     header_length = mib_hdr['DataOffset']
@@ -263,6 +280,24 @@ def get_scan_shape(mibfiles):
 
 
 def get_microscope_parameters(data):
+    """
+    Get microscope parameters for 4D-STEM data from simultaneously acquired
+    Digital Micrograph (.dm3/.dm4) file.
+
+    Args
+    ----------
+    data : h5py file, str, or HyperSpy signal
+        Variable containing the acquisition metadata
+
+    Returns
+    ----------
+    ht : float
+        Microscope accelerating voltage
+    cl : int
+        Microscope camera length
+
+    """
+
     if isinstance(data, h5py.File):
         cl = np.float(data["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
                            "Microscope Info/STEM Camera Length"][...])

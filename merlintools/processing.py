@@ -9,6 +9,22 @@ from merlintools import color
 
 
 def get_radial_profile(ds, com_yx):
+    """
+    Determine scan shape from file size and exposure times
+
+    Args
+    ----------
+    ds : NumPy array
+        4D-STEM dataset
+    com_yx : tuple
+        List of center point for each frame, usually determined by center
+        of mass analysis
+
+    Returns
+    ----------
+    s : HyperSpy Signal1D
+        Radial average as a function of beam scan position
+    """
     radial_mean = [None] * ds.shape[0]*ds.shape[1]
     idx = 0
     min_length = np.inf
@@ -33,6 +49,28 @@ def get_radial_profile(ds, com_yx):
 
 def shift_func(image, scanYind, scanXind, shift_array, sub_pixel=True,
                interpolation=3):
+    """
+    Function for centering 4D-STEM data using align_merlin
+
+    Args
+    ----------
+    image : NumPy array
+        4D-STEM dataset
+    scanYind, scanXind : int
+        Scan indices for iteration
+    shift_array : NumPy array
+        Array containing x and y shifts for each pattern
+    sub_pixel : bool
+        If True, perform sub-pixel alignment. May cause interpolation
+        artifacts.
+    interpolation : int
+        Order of interpolation for sub-pixel alignment
+
+    Returns
+    ----------
+    new_im : NumPy array
+        Shifted version of input image
+    """
     if sub_pixel:
         syx = shift_array[:, scanYind, scanXind]
     else:
@@ -43,6 +81,22 @@ def shift_func(image, scanYind, scanXind, shift_array, sub_pixel=True,
 
 
 def align_merlin(h5filename, sub_pixel=True, interpolation=3):
+    """
+    Align the data using fpd center of mass analysis.  Writes results to
+    a new HDF5 file.
+
+    Args
+    ----------
+    h5filename : str
+        Filename of FPD data
+    sub_pixel : bool
+        If True, perform sub-pixel alignment.  May cause interpolation
+        artifacts.
+    interpolation : int
+        Order of interpolation for sub-pixel alignment
+
+
+    """
     coms_file = os.path.splitext(h5filename)[0] + "_CoMs.npy"
     shifts_file = os.path.splitext(h5filename)[0] + "_Shifts.npy"
     ali_file = os.path.splitext(h5filename)[0] + "_Aligned.hdf5"
@@ -82,6 +136,38 @@ def align_merlin(h5filename, sub_pixel=True, interpolation=3):
 def get_segmented_annular_aperture(ds, cyx=(128, 128),
                                    rio=[[0, 20], [30, 60]], plot_result=False,
                                    sigma=0, aaf=3, axis=None, color_list=None):
+    """
+    Return a bright-field aperture plus a segmented annular aperture with four
+    quadrants.  Uses the synthetic aperture function of FPD.
+
+    Args
+    ----------
+    ds : NumPy array
+        4D-STEM dataset
+    cyx : tuple
+        List of center point for each frame, usually determined by center
+        of mass analysis
+    rio : list
+        Inner and outer radii for the bright-field.  First entry is for the
+        bright field aperture, the second applies to the four segmented
+        apertures
+    plot_result : bool
+        If True, plot resulting apertures in color
+    sigma : float
+        Sigma for Gaussian blur function
+    aaf : float
+        Anti-aliasing factor to pass to synthetic_aperture function in FPD.
+        Use 1 for none.
+    axis : MatPlotlib axis
+        If provided, plot aperture image in pre-defined axis.
+    color_list : list
+        Defines colors for plot result
+
+    Returns
+    ----------
+    aps : NumPy array
+        Resulting apertures
+    """
     rio = np.array(rio)
     rio = np.vstack((rio, np.zeros([4, 2])))
     rio[2:, :] = rio[1, :]
@@ -115,6 +201,26 @@ def get_segmented_annular_aperture(ds, cyx=(128, 128),
 
 
 def get_max_dps(data_4d, image, n_pix=100):
+    """
+    Return a HyperSpy signal containing the most diffraction patterns
+    from the most intense pixels in an image.  For example, an ADF image
+    can be provided and the diffraction patterns which contributed the most
+    intensity to the ADF aperture will be returned.
+
+    Args
+    ----------
+    ds : NumPy array
+        4D-STEM dataset
+    image : NumPy array
+        Image to be used for locating diffraction patterns.
+    n_pix : int
+        The number of patterns to return.
+
+    Returns
+    ----------
+    dps : HyperSpy Signal2D
+
+    """
     dps = np.zeros([n_pix, data_4d.shape[2], data_4d.shape[3]])
     max_locs = image.ravel().argsort()[::-1]
 
