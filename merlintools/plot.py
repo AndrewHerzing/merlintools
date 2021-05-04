@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pylab as plt
 
 
-def plot_most_intense_patterns(dataset, im, ndiffs=10):
+def plot_most_intense_patterns(dataset, im, ndiffs=10, logscale=True):
     """
     Plot the diffraction patterns at the ndiffs most intense locations
     in an image.
@@ -15,23 +15,34 @@ def plot_most_intense_patterns(dataset, im, ndiffs=10):
         Image to use for selection of locations.
     ndiffs : integer
         Number of patterns to plot.
+    logscale : boolean
+        If True, plot patterns on a log scale.
 
     Returns
     ----------
-    fig : Matplotlib Figure
-        Figure containing the plotted patterns.
+    locs : NumPy array
+        Locations of most intense patterns.
 
     """
     nrows = int(np.ceil(ndiffs/3))
     idx = np.ravel(im).argsort()[::-1][0:ndiffs]
     fig, ax = plt.subplots(nrows, 3, figsize=(9, 3*nrows))
     n = 0
+    locs = np.zeros([ndiffs, 2], np.int32)
     for i in ax.flat:
         if n < ndiffs:
-            loc = np.unravel_index(idx[n], [100, 99])
-            diff = dataset[loc[0], loc[1]+1, :, :]
-            i.imshow(np.log(diff+1), vmin=0.5, vmax=3, cmap='inferno')
+            locs[n, :] = np.unravel_index(idx[n], im.shape)
+            diff = dataset[locs[n][0], locs[n][1], :, :]
+            if logscale:
+                diff = np.log(diff+1)
+                vmax = diff.max()
+                vmin = diff.min()
+                i.imshow(diff, vmin=vmin, vmax=vmax, cmap='inferno')
+            else:
+                vmax = diff.max()
+                vmin = diff.min()
+                i.imshow(diff, vmin=vmin, vmax=vmax, cmap='inferno')
         i.axis('off')
         n += 1
     plt.tight_layout()
-    return fig
+    return locs
