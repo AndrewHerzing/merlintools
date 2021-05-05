@@ -80,7 +80,8 @@ def shift_func(image, scanYind, scanXind, shift_array, sub_pixel=True,
     return new_im
 
 
-def align_merlin(h5filename, sub_pixel=True, interpolation=3):
+def align_merlin(h5filename, sub_pixel=True, interpolation=3,
+                 apply_threshold=True, apply_mask=True):
     """
     Align the data using fpd center of mass analysis.  Writes results to
     a new HDF5 file.
@@ -94,6 +95,11 @@ def align_merlin(h5filename, sub_pixel=True, interpolation=3):
         artifacts.
     interpolation : int
         Order of interpolation for sub-pixel alignment
+    apply_threshold : bool
+        If True, threshold data before further processing. Threshold is set to
+        half of the maximum value of the central pattern.
+    apply_mask : bool
+        If True, mask data to region around central beam.
 
 
     """
@@ -107,13 +113,21 @@ def align_merlin(h5filename, sub_pixel=True, interpolation=3):
     h5f = nt.file
 
     idx_x, idx_y = np.int32(np.array(ds.shape[0:2])/2)
-    thresh_val = 0.5 * ds[idx_x, idx_y, :, :].max()
-    cyx, cr = fpdp.find_circ_centre(sum_dif, 10, (6, 20, 2), pct=90,
-                                    spf=1, plot=False)
 
-    mask = fpdp.synthetic_aperture(shape=ds.shape[-2:], cyx=cyx,
-                                   rio=(0, cr*2.5), sigma=0)[0]
-    mask = np.ceil(mask)
+    if apply_threshold:
+        thresh_val = 0.5 * ds[idx_x, idx_y, :, :].max()
+    else:
+        thresh_val = None
+
+    if apply_mask:
+        cyx, cr = fpdp.find_circ_centre(sum_dif, 10, (6, 20, 2), pct=90,
+                                        spf=1, plot=False)
+
+        mask = fpdp.synthetic_aperture(shape=ds.shape[-2:], cyx=cyx,
+                                       rio=(0, cr*2.5), sigma=0)[0]
+        mask = np.ceil(mask)
+    else:
+        mask = None
 
     com_yx = fpdp.center_of_mass(ds, nr=None, nc=None, aperture=mask,
                                  progress_bar=False, print_stats=False,
