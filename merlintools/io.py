@@ -315,3 +315,35 @@ def get_microscope_parameters(data):
         ht = np.float(data.DM0[4]["ImageList/TagGroup0/ImageTags/"
                                   "Microscope Info/Voltage"][...])/1000
     return ht, cl
+
+def get_spatial_axes_dict(nt):
+    """
+    Create a Hyperspy axes manager dictionary from an FPD data object
+
+    Args
+    ----------
+    nt : tuple
+        Tuple containing FPD data created using fpd.fpd_file.fpd_to_tuple
+
+    Returns
+    ----------
+    axes_dict : dict
+        Hyperspy ready dictionary containing axes info
+
+    """
+
+    unitsX = nt.fpd_data.dim2.units
+    originX = nt.fpd_data.dim2.data[0]
+    scaleX = nt.fpd_data.dim2.data[1] - nt.fpd_data.dim2.data[0]
+    sizeX = nt.fpd_data.dim2.data.shape[0]
+
+    unitsY = nt.fpd_data.dim1.units
+    originY = nt.fpd_data.dim1.data[0]
+    scaleY = nt.fpd_data.dim1.data[1] - nt.fpd_data.dim1.data[0]
+    sizeY = nt.fpd_data.dim1.data.shape[0]
+
+    axes_dict = {'axis-0':{'name':'x', 'offset':originX, 'units': unitsX,
+                           'scale': scaleX, 'size':sizeX},
+                 'axis-1':{'name':'y', 'offset':originY, 'units': unitsY,
+                           'scale': scaleY, 'size':sizeY}}
+    return axes_dict
