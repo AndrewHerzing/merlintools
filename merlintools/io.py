@@ -342,8 +342,8 @@ def get_spatial_axes_dict(nt):
     scaleY = nt.fpd_data.dim1.data[1] - nt.fpd_data.dim1.data[0]
     sizeY = nt.fpd_data.dim1.data.shape[0]
 
-    axes_dict = {'axis-0':{'name':'x', 'offset':originX, 'units': unitsX,
-                           'scale': scaleX, 'size':sizeX},
-                 'axis-1':{'name':'y', 'offset':originY, 'units': unitsY,
-                           'scale': scaleY, 'size':sizeY}}
+    axes_dict = {'axis-0':{'name':'y', 'offset':originY, 'units': unitsY,
+                           'scale': scaleY, 'size':sizeY},
+                 'axis-1':{'name':'x', 'offset':originX, 'units': unitsX,
+                           'scale': scaleX, 'size':sizeX}}
     return axes_dict
