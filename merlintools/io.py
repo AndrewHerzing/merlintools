@@ -337,10 +337,20 @@ def get_spatial_axes_dict(nt):
     scaleX = nt.fpd_data.dim2.data[1] - nt.fpd_data.dim2.data[0]
     sizeX = nt.fpd_data.dim2.data.shape[0]
 
+    if unitsX in ['um', 'µm']:
+        unitsX = 'nm'
+        scaleX = scaleX * 1000
+        originX = originX * 1000
+
     unitsY = nt.fpd_data.dim1.units
     originY = nt.fpd_data.dim1.data[0]
     scaleY = nt.fpd_data.dim1.data[1] - nt.fpd_data.dim1.data[0]
     sizeY = nt.fpd_data.dim1.data.shape[0]
+
+    if unitsY in ['um', 'µm']:
+        unitsY = 'nm'
+        scaleY = scaleX * 1000
+        originY = originX * 1000
 
     axes_dict = {'axis-0':{'name':'y', 'offset':originY, 'units': unitsY,
                            'scale': scaleY, 'size':sizeY},
