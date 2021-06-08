@@ -278,6 +278,36 @@ def get_scan_shape(mibfiles):
     scanYalu = [np.arange(0, scan_height), 'y', 'pixels']
     return scanXalu, scanYalu, skip_frames, total_frames
 
+def get_merlin_parameters(data):
+    """
+    Get Merlin parameters for 4D-STEM data from FPD HDF5 file.
+
+    Args
+    ----------
+    data : h5py file or str
+        Either the FPD HDF5 filename or FPD file object
+
+    Returns
+    ----------
+    params : dict
+        Dictionary containing the Merlin frame time, scan shape, and detector shape
+
+    """
+    if isinstance(data, h5py.File):
+        scanY, scanX, detY, detX = data["fpd_expt/fpd_data/data"].shape
+        exposures = np.round(data["fpd_expt/Exposure/data"][...]/1e6, 1)
+        frame_time = np.unique(exposures)[0]
+
+    elif isinstance(data, str):
+        with h5py.File(data, 'r') as h5:
+            scanY, scanX, detY, detX = h5["fpd_expt/fpd_data/data"].shape
+            exposures = np.round(h5["fpd_expt/Exposure/data"][...]/1e6, 1)
+            frame_time = np.unique(exposures)[0]
+    
+        params = {'Frame time': frame_time,
+                  'Scan shape': [scanY, scanX],
+                  'Detector shape': [detY, detX]}
+    return params
 
 def get_microscope_parameters(data, display=False):
     """
@@ -291,10 +321,8 @@ def get_microscope_parameters(data, display=False):
 
     Returns
     ----------
-    ht : float
-        Microscope accelerating voltage
-    cl : int
-        Microscope camera length
+    params : dict
+        Dictionary containing the microscope voltage, camera length, and magnification
 
     """
 
@@ -324,8 +352,9 @@ def get_microscope_parameters(data, display=False):
         print("Microscope voltage: %.1f kV" % ht)
         print("STEM Camera Length: %.1f mm" % cl)
         print("Magnification: %.1f X" % mag)
-
-    return {'CL': cl, 'HT': ht, 'Magnification': mag}
+    
+    params = {'CL': cl, 'HT': ht, 'Magnification': mag}
+    return params
 
 def get_spatial_axes_dict(nt):
     """
