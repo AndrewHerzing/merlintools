@@ -425,9 +425,14 @@ def get_spatial_axes_dict(nt):
 def get_experimental_parameters(rootpath="./", sublevels=2):
     h5files = glob.glob(rootpath+ "*/" * sublevels + "*.hdf5")
     h5files = [x for x in h5files if not x.endswith('Aligned.hdf5') or x.endswith('aligned.hdf5')] 
-    rootpaths = [h5files[i].split('/')[1] for i in range(len(h5files))]
-    timestamps = [h5files[i].split('/')[2] for i in range(len(h5files))]
-    h5filenames = [h5files[i].split('/')[3] for i in range(len(h5files))]
+
+    if sublevels == 1:
+        rootpaths = [h5files[i].split('/')[1] for i in range(len(h5files))]
+    else:
+        rootpaths = [h5files[i].split('/')[1:1+sublevels] for i in range(len(h5files))]
+        rootpaths = [os.path.join(*rootpaths[i]) for i in range(len(rootpaths))]
+    timestamps = [h5files[i].split('/')[sublevels+1] for i in range(len(h5files))]
+    h5filenames = [h5files[i].split('/')[sublevels+2] for i in range(len(h5files))]
 
     hts = [None]*len(h5files)
     cls = [None]*len(h5files)
@@ -438,7 +443,6 @@ def get_experimental_parameters(rootpath="./", sublevels=2):
     frame_times = [None]*len(h5files)
 
     for i in range(0, len(h5files)):
-        logger.info("Reading parameters from %s" % h5files[i])
         microscope_params = get_microscope_parameters(h5files[i])
         hts[i] = microscope_params['HT']
         cls[i] = microscope_params['CL']
