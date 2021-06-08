@@ -413,8 +413,8 @@ def get_spatial_axes_dict(nt):
 
     if unitsY in ['um', 'µm']:
         unitsY = 'nm'
-        scaleY = scaleX * 1000
-        originY = originX * 1000
+        scaleY = scaleY * 1000
+        originY = originY * 1000
 
     axes_dict = {'axis-0':{'name':'y', 'offset':originY, 'units': unitsY,
                            'scale': scaleY, 'size':sizeY},
