@@ -422,18 +422,12 @@ def get_spatial_axes_dict(nt):
                            'scale': scaleX, 'size':sizeX}}
     return axes_dict
 
-def get_experimental_parameters(rootpath="./", sublevels=2):
-    h5files = glob.glob(rootpath+ "*/" * sublevels + "*.hdf5")
+def get_experimental_parameters(rootpath="./"):
+    h5files = glob.glob(rootpath + "**/*.hdf5", recursive=True)
     h5files = [x for x in h5files if not x.endswith('Aligned.hdf5') or x.endswith('aligned.hdf5')] 
 
-    if sublevels == 1:
-        rootpaths = [h5files[i].split('/')[1] for i in range(len(h5files))]
-    else:
-        rootpaths = [h5files[i].split('/')[1:1+sublevels] for i in range(len(h5files))]
-        rootpaths = [os.path.join(*rootpaths[i]) for i in range(len(rootpaths))]
-    timestamps = [h5files[i].split('/')[sublevels+1] for i in range(len(h5files))]
-    h5filenames = [h5files[i].split('/')[sublevels+2] for i in range(len(h5files))]
-
+    datapaths = [None]*len(h5files)
+    h5filenames = [None]*len(h5files)
     hts = [None]*len(h5files)
     cls = [None]*len(h5files)
     mags = [None]*len(h5files)
@@ -443,6 +437,7 @@ def get_experimental_parameters(rootpath="./", sublevels=2):
     frame_times = [None]*len(h5files)
 
     for i in range(0, len(h5files)):
+        datapaths[i], h5filenames[i] = os.path.split(h5files[i])
         microscope_params = get_microscope_parameters(h5files[i])
         hts[i] = microscope_params['HT']
         cls[i] = microscope_params['CL']
@@ -455,8 +450,7 @@ def get_experimental_parameters(rootpath="./", sublevels=2):
         thresholds[i] = merlin_params['Threshold']
 
     df = pd.DataFrame()
-    df['Root Path'] = rootpaths 
-    df['Time Stamp'] = timestamps
+    df['Data Path'] = datapaths
     df['H5 File'] = h5filenames
     df['Beam Energy'] = hts
     df['Camera Length'] = cls
