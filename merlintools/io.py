@@ -279,7 +279,7 @@ def get_scan_shape(mibfiles):
     return scanXalu, scanYalu, skip_frames, total_frames
 
 
-def get_microscope_parameters(data):
+def get_microscope_parameters(data, display=False):
     """
     Get microscope parameters for 4D-STEM data from simultaneously acquired
     Digital Micrograph (.dm3/.dm4) file.
@@ -299,22 +299,32 @@ def get_microscope_parameters(data):
     """
 
     if isinstance(data, h5py.File):
-        cl = np.float(data["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
-                           "Microscope Info/STEM Camera Length"][...])
-        ht = np.float(data["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
-                           "Microscope Info/Voltage"][...])/1000
+        cl = float(data["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
+                        "Microscope Info/STEM Camera Length"][...])
+        ht = float(data["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
+                        "Microscope Info/Voltage"][...])/1000
+        mag = float(data["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
+                         "Microscope Info/Indicated Magnification"][...])
     elif isinstance(data, str):
         with h5py.File(data, 'r') as h5:
-            cl = np.float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
-                             "Microscope Info/STEM Camera Length"][...])
-            ht = np.float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
-                             "Microscope Info/Voltage"][...])/1000
+            cl = float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
+                          "Microscope Info/STEM Camera Length"][...])
+            ht = float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
+                          "Microscope Info/Voltage"][...])/1000
+            mag = float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
+                           "Microscope Info/Indicated Magnification"][...])
     else:
-        cl = np.float(data.DM0[4]["ImageList/TagGroup0/ImageTags/"
-                                  "Microscope Info/STEM Camera Length"][...])
-        ht = np.float(data.DM0[4]["ImageList/TagGroup0/ImageTags/"
-                                  "Microscope Info/Voltage"][...])/1000
-    return ht, cl
+        cl = float(data.DM0.tags["ImageList/TagGroup0/ImageTags/"
+                               "Microscope Info/STEM Camera Length"][...])
+        ht = float(data.DM0.tags["ImageList/TagGroup0/ImageTags/"
+                               "Microscope Info/Voltage"][...])/1000
+        mag = float(data.DM0.tags["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
+                                  "Microscope Info/Indicated Magnification"][...])
+    if display:
+        print("Microscope voltage: %.1f kV" % ht)
+        print("STEM Camera Length: %.1f mm" % cl)
+        print("Magnification: %.1f X" % mag)
+    return ht, cl, mag
 
 def get_spatial_axes_dict(nt):
     """
