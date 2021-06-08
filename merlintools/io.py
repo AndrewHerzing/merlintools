@@ -325,7 +325,7 @@ def get_microscope_parameters(data, display=False):
         print("STEM Camera Length: %.1f mm" % cl)
         print("Magnification: %.1f X" % mag)
 
-    return {'cl': cl, 'ht': ht, 'mag': mag}
+    return {'CL': cl, 'HT': ht, 'Magnification': mag}
 
 def get_spatial_axes_dict(nt):
     """
