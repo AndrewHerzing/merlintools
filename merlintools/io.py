@@ -438,16 +438,17 @@ def get_experimental_parameters(rootpath="./"):
 
     for i in range(0, len(h5files)):
         datapaths[i], h5filenames[i] = os.path.split(h5files[i])
-        microscope_params = get_microscope_parameters(h5files[i])
-        hts[i] = microscope_params['HT']
-        cls[i] = microscope_params['CL']
-        mags[i] = microscope_params['Magnification']
+        if fpd_check(h5files[i]):
+            microscope_params = get_microscope_parameters(h5files[i])
+            hts[i] = microscope_params['HT']
+            cls[i] = microscope_params['CL']
+            mags[i] = microscope_params['Magnification']
 
-        merlin_params = get_merlin_parameters(h5files[i])
-        scan_shapes[i] = ("%s x %s" % (merlin_params['Scan shape'][0], merlin_params['Scan shape'][1]))
-        det_shapes[i] = ("%s x %s" % (merlin_params['Detector shape'][0], merlin_params['Detector shape'][1]))
-        frame_times[i] = merlin_params['Frame time']
-        thresholds[i] = merlin_params['Threshold']
+            merlin_params = get_merlin_parameters(h5files[i])
+            scan_shapes[i] = ("%s x %s" % (merlin_params['Scan shape'][0], merlin_params['Scan shape'][1]))
+            det_shapes[i] = ("%s x %s" % (merlin_params['Detector shape'][0], merlin_params['Detector shape'][1]))
+            frame_times[i] = merlin_params['Frame time']
+            thresholds[i] = merlin_params['Threshold']
 
     df = pd.DataFrame()
     df['Data Path'] = datapaths
@@ -461,3 +462,16 @@ def get_experimental_parameters(rootpath="./"):
     df['Threshold'] = thresholds
 
     return df
+
+def fpd_check(data):
+    if isinstance(data, str):
+        with h5py.File(data, 'r') as h5:
+            if "/fpd_expt/" in h5.keys():
+                return True
+            else:
+                return False
+    elif isinstance(data, h5py.File):
+        if "/fpd_expt/" in data.keys():
+            return True
+        else:
+            return False
