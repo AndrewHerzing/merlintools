@@ -178,7 +178,7 @@ def get_relativistic_mass(voltage):
     return rel_mass
 
 
-def calc_dose_pixel(probe_current, dwell_time, pixel_size):
+def calc_dose_pixel(probe_current, pixel_size, dwell_time):
     """
     Calculate electron dose given probe current, dwell time, and pixel size
 
