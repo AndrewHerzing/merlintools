@@ -329,3 +329,35 @@ def get_calibration(beam_energy, cl, units='mrads'):
         raise ValueError("Units (%s) not understood. "
                          "Must be 'mrads', 'q', or 'k'" % units)
     return calibration
+
+def optimize_parameters(beam_energy, min_q, max_q):
+
+    cls = ['38','48','60','77','100','130','160','195','245','300','380',
+           '450', '600', '770', '900', '1200']
+
+    cals = np.zeros(len(cls))
+    q_256 = np.zeros(len(cls))
+    for i in range(0, len(cls)):
+        cals[i] = get_calibration(beam_energy, cls[i], units='q')
+        q_256[i] = cals[i] * 256
+
+    max_cl = cls[np.where(q_256>1.5*max_q)[0][-1]]
+    max_alpha = q_to_mrads(10*min_q, beam_energy)/1.5
+
+
+    print("Merlin Experimental Parameters")
+    print("##############################")
+    print("Beam energy (keV): \t\t%.1f" % beam_energy)
+    print("Maximum Required q (A^-1): \t%.2f" % max_q)
+    print("Minimum Required q (A^-1): \t%.2f\n" % min_q)
+    print("Recommended Parameters")
+    print("Highest CL (mm): \t\t%s" % max_cl)
+    print("Highest alpha (mrads): \t\t%.1f\n\n" % max_alpha)
+
+    print("Suggested ADF Mask Locations")
+    print("############################\n")
+    print("CL (mm)\t\tLocation for q_min (pixels))\t\tLocation for q_max (pixels)")
+    print("--------------------------------------------------------------------------------------")
+    for i in range(0, len(cals)):
+        print("%s\t\t\t%.1f\t\t\t\t\t%.1f" % (cls[i], min_q/cals[i], max_q/cals[i]))
+    return
