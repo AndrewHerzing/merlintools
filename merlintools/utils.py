@@ -134,6 +134,25 @@ def k_to_mrads(k, voltage):
     angle = 1000 * np.arcsin(k * wavelength / 2)
     return angle
 
+def q_to_mrads(q, voltage):
+    """
+    Convert from momentum transfer (nm^-1) value an angular value (mrads)
+
+    Args
+    ----------
+    q : float
+        Momentum transfer (2*pi*k) in inverse nanometers
+    voltage : float or int
+        Electron beam voltage (kV)
+
+    Returns
+    ----------
+    angle : float
+        Scattering angle in mrads
+    """
+    wavelength = voltage_to_wavelength(voltage, True)
+    angle = 1000 * np.arcsin(q / (2 * np.pi) * wavelength / 2)
+    return angle
 
 def voltage_to_wavelength(voltage, relativistic=False):
     """
