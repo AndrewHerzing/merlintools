@@ -201,7 +201,7 @@ def calc_dose_pixel(probe_current, dwell_time, pixel_size):
     dose = 6.242e18 * probe_current * dwell_time / pixel_size**2
     return dose
 
-def dose_calculator_probe(probe_current, probe_fwhm, dwell_time):
+def calc_dose_probe(probe_current, probe_fwhm, dwell_time):
     '''
     Calulate electron based on the measured probe size
     
