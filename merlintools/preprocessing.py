@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*-
+#
+# This file is part of MerlinTools
+
+"""
+preprocessing module for MerlinTools package.
+
+@author: Andrew Herzing
+"""
+
 import os
 import glob
 import logging
@@ -17,8 +27,7 @@ def merlin_to_fpd(rootpath=None, savepath=None, keep_unshaped=False,
                   shutdown=False, discard_first_column=False,
                   discard_data=False):
     """
-    Convert Merlin .MIB/.HDR files to FPD files and transfer to a storage
-    location.
+    Convert Merlin files to FPD HDF5 archive and transfer to a storage location.
 
     Args
     ----------
@@ -47,7 +56,6 @@ def merlin_to_fpd(rootpath=None, savepath=None, keep_unshaped=False,
         List of the resulting HDF5 filenames.
 
     """
-
     if not rootpath:
         root = tk.Tk()
         root.withdraw()

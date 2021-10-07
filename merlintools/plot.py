@@ -1,11 +1,20 @@
+# -*- coding: utf-8 -*-
+#
+# This file is part of MerlinTools
+
+"""
+plot module for MerlinTools package.
+
+@author: Andrew Herzing
+"""
+
 import numpy as np
 import matplotlib.pylab as plt
 
 
 def plot_most_intense_patterns(dataset, im, ndps=10, logscale=True):
     """
-    Plot the diffraction patterns at the ndps most intense locations
-    in an image.
+    Plot the diffraction patterns at the most intense locations in an image.
 
     Args
     ----------

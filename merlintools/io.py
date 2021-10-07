@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*-
+#
+# This file is part of MerlinTools
+
+"""
+io module for MerlinTools package.
+
+@author: Andrew Herzing
+"""
+
 import re
 import numpy as np
 import os
@@ -25,7 +35,6 @@ def sort_mibs(filename_list):
         A list of MIB files sorted by frame number
 
     """
-
     key_list = []
 
     for filename in filename_list:
@@ -112,7 +121,6 @@ def parse_hdr(hdrfile):
         Extracted header information
 
     """
-
     header = {}
     with open(hdrfile, 'r') as h:
         _ = h.readlines(1)[0].rstrip()
@@ -221,7 +229,7 @@ def parse_mib_header(mibfile):
 
 def get_scan_shape(mibfiles):
     """
-    Determine scan shape from file size and exposure times
+    Determine scan shape from file size and exposure times.
 
     rgs
     ----------
@@ -321,8 +329,10 @@ def get_merlin_parameters(data):
 
 def get_microscope_parameters(data, display=False):
     """
-    Get microscope parameters for 4D-STEM data from simultaneously acquired
-    Digital Micrograph (.dm3/.dm4) file.
+    Get microscope parameters for 4D-STEM data.
+
+    Parses the simultaneously acquired Digital Micrograph (.dm3/.dm4) file
+    to determine camera length, high tension, and magnification.
 
     Args
     ----------
@@ -336,7 +346,6 @@ def get_microscope_parameters(data, display=False):
         and magnification
 
     """
-
     if isinstance(data, h5py.File):
         if "DM0" in data["/fpd_expt/"].keys():
             cl = float(data["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
@@ -385,7 +394,7 @@ def get_microscope_parameters(data, display=False):
 
 def get_spatial_axes_dict(nt):
     """
-    Create a Hyperspy axes manager dictionary from an FPD data object
+    Create a Hyperspy axes manager dictionary from an FPD data object.
 
     Args
     ----------
@@ -398,7 +407,6 @@ def get_spatial_axes_dict(nt):
         Hyperspy ready dictionary containing axes info
 
     """
-
     unitsX = nt.fpd_data.dim2.units
     originX = nt.fpd_data.dim2.data[0]
     scaleX = nt.fpd_data.dim2.data[1] - nt.fpd_data.dim2.data[0]
@@ -484,7 +492,7 @@ def get_experimental_parameters(rootpath="./"):
 
 def fpd_check(data):
     """
-    Check if a file is an FPD-created HDF5
+    Check if a file is an FPD-created HDF5.
 
     Args
     ----------

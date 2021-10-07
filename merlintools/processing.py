@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*-
+#
+# This file is part of MerlinTools
+
+"""
+processing module for MerlinTools package.
+
+@author: Andrew Herzing
+"""
+
 import os
 import hyperspy.api as hs
 import numpy as np
@@ -10,7 +20,7 @@ from merlintools import color
 
 def get_radial_profile(ds, com_yx):
     """
-    Determine scan shape from file size and exposure times
+    Determine scan shape from file size and exposure times.
 
     Args
     ----------
@@ -50,7 +60,7 @@ def get_radial_profile(ds, com_yx):
 def shift_func(image, scanYind, scanXind, shift_array, sub_pixel=True,
                interpolation=3):
     """
-    Function for centering 4D-STEM data using align_merlin
+    Center 4D-STEM data using align_merlin.
 
     Args
     ----------
@@ -83,8 +93,9 @@ def shift_func(image, scanYind, scanXind, shift_array, sub_pixel=True,
 def align_merlin(h5filename, sub_pixel=True, interpolation=3,
                  apply_threshold=True, apply_mask=True):
     """
-    Align the data using fpd center of mass analysis.  Writes results to
-    a new HDF5 file.
+    Align the data using fpd center of mass analysis.
+
+    Results are written to a new HDF5 file.
 
     Args
     ----------
@@ -151,8 +162,10 @@ def get_segmented_annular_aperture(ds, cyx=(128, 128),
                                    rio=[[0, 20], [30, 60]], plot_result=False,
                                    sigma=0, aaf=3, axis=None, color_list=None):
     """
-    Return a bright-field aperture plus a segmented annular aperture with four
-    quadrants.  Uses the synthetic aperture function of FPD.
+    Create a segmented annular aperture.
+
+    A circular bright-field aperture plus a segmented annular aperture with four
+    quadrants are created using the synthetic aperture function of FPD.
 
     Args
     ----------
@@ -216,10 +229,10 @@ def get_segmented_annular_aperture(ds, cyx=(128, 128),
 
 def get_max_dps(data_4d, image, n_pix=100):
     """
-    Return a HyperSpy signal containing the most diffraction patterns
-    from the most intense pixels in an image.  For example, an ADF image
-    can be provided and the diffraction patterns which contributed the most
-    intensity to the ADF aperture will be returned.
+    Return a HyperSpy signal containing the diffraction patterns from the most intense pixels in an image.
+
+    For example, an ADF image can be provided and the diffraction patterns which
+    contributed the most intensity to the ADF aperture will be returned.
 
     Args
     ----------

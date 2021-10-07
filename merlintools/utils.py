@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*-
+#
+# This file is part of MerlinTools
+
+"""
+utils module for MerlinTools package.
+
+@author: Andrew Herzing
+"""
+
 import numpy as np
 from scipy import optimize
 import logging
@@ -20,7 +30,7 @@ Na = 6.0221409e23   # Avogadro's number
 
 def get_lattice_spacings(material):
     """
-    Return a dictionary of primary lattice spacings for a given material
+    Return a dictionary of primary lattice spacings for a given material.
 
     Args
     ----------
@@ -33,7 +43,6 @@ def get_lattice_spacings(material):
     d : float
         Lattice spacing in nanometers
     """
-
     if material.lower() == 'aupd':
         hkls = {'111': 2.31, '200': 2.00, '220': 1.41,
                 '311': 1.21, '222': 1.15}
@@ -52,7 +61,7 @@ def get_lattice_spacings(material):
 
 def mrads_to_hkl(angle, voltage):
     """
-    Convert from an diffraction angle (mrads) to lattice spacing (nm)
+    Convert from an diffraction angle (mrads) to lattice spacing (nm).
 
     Args
     ----------
@@ -66,7 +75,6 @@ def mrads_to_hkl(angle, voltage):
     d : float
         Lattice spacing in nanometers
     """
-
     wavelength = voltage_to_wavelength(300, True)
     d = wavelength / (2 * np.sin(angle / 1000))
     return d
@@ -74,7 +82,7 @@ def mrads_to_hkl(angle, voltage):
 
 def mrads_to_q(angle, voltage):
     """
-    Convert from an angular value (mrads) to momentum value (nm^-1)
+    Convert from an angular value (mrads) to momentum value (nm^-1).
 
     Args
     ----------
@@ -95,7 +103,7 @@ def mrads_to_q(angle, voltage):
 
 def mrads_to_k(angle, voltage):
     """
-    Convert from an angular value (mrads) to reciprocal space (nm^-1)
+    Convert from an angular value (mrads) to reciprocal space (nm^-1).
 
     Args
     ----------
@@ -116,7 +124,7 @@ def mrads_to_k(angle, voltage):
 
 def k_to_mrads(k, voltage):
     """
-    Convert from a reciprocal space (nm^-1) value an angular value (mrads)
+    Convert from a reciprocal space (nm^-1) value an angular value (mrads).
 
     Args
     ----------
@@ -137,7 +145,7 @@ def k_to_mrads(k, voltage):
 
 def q_to_mrads(q, voltage):
     """
-    Convert from momentum transfer (nm^-1) value an angular value (mrads)
+    Convert from momentum transfer (nm^-1) value an angular value (mrads).
 
     Args
     ----------
@@ -158,7 +166,7 @@ def q_to_mrads(q, voltage):
 
 def voltage_to_wavelength(voltage, relativistic=False):
     """
-    Calculates electron wavelength given voltage
+    Calculate electron wavelength given voltage.
 
     Args
     ----------
@@ -183,7 +191,7 @@ def voltage_to_wavelength(voltage, relativistic=False):
 
 def get_relativistic_mass(voltage):
     """
-    Calculates relativistic mass given voltage
+    Calculate relativistic mass given voltage.
 
     Args
     ----------
@@ -201,7 +209,7 @@ def get_relativistic_mass(voltage):
 
 def calc_dose_pixel(probe_current, pixel_size, dwell_time):
     """
-    Calculate electron dose given probe current, dwell time, and pixel size
+    Calculate electron dose given probe current, dwell time, and pixel size.
 
     Args
     ---------
@@ -224,8 +232,8 @@ def calc_dose_pixel(probe_current, pixel_size, dwell_time):
 
 
 def calc_dose_probe(probe_current, probe_fwhm, dwell_time):
-    '''
-    Calulate electron based on the measured probe size
+    """
+    Calulate electron based on the measured probe size.
 
     Args
     ---------
@@ -241,21 +249,21 @@ def calc_dose_probe(probe_current, probe_fwhm, dwell_time):
     dose : float
         Calculated electron dose in electrons per square nanometer
 
-    '''
+    """
     n_electrons = 6.242e18 * probe_current * dwell_time
-    dose = n_electrons / (np.pi*(probe_fwhm/2)**2)
+    dose = n_electrons / (np.pi * (probe_fwhm / 2)**2)
     return dose
 
 
-def fit_func(x, A, exp):
-    return A*x**exp
+def _fit_func(x, A, exp):
+    return A * x**exp
 
 
-def extrapolate_calibration(cl, calibrations):
+def _extrapolate_calibration(cl, calibrations):
     xdata = [int(i) for i in calibrations.keys()]
     ydata = [calibrations[i] for i in calibrations.keys()]
-    res, cov = optimize.curve_fit(fit_func, xdata, ydata)
-    return fit_func(cl, *res)
+    res, cov = optimize.curve_fit(_fit_func, xdata, ydata)
+    return _fit_func(cl, *res)
 
 
 # Calibrations in mrads/pixel
@@ -277,8 +285,7 @@ with open(calibration_file_300kV, 'r') as fp:
 
 def get_calibration(beam_energy, cl, units='mrads'):
     """
-    Returns reciprocal space calibration given the beam energy and
-    camera length.
+    Return reciprocal space calibration given the beam energy and camera length.
 
     Args
     ----------
@@ -297,7 +304,6 @@ def get_calibration(beam_energy, cl, units='mrads'):
     calibration : float
         Reciprocal space calibration in mrads/pixel or A^-1/pixel
     """
-
     beam_energy = int(beam_energy)
     if beam_energy == 303:
         beam_energy = 300
@@ -317,7 +323,7 @@ def get_calibration(beam_energy, cl, units='mrads'):
         logger.info("Camera length found in calibration table.")
     else:
         calibration =\
-            np.round(extrapolate_calibration(cl, calibration_dictionary), 3)
+            np.round(_extrapolate_calibration(cl, calibration_dictionary), 3)
         logger.info("Camera length not in calibration table. "
                     "Calibration will be extrapolated.")
 
@@ -358,8 +364,8 @@ def optimize_parameters(beam_energy, min_q, max_q):
         cals[i] = get_calibration(beam_energy, cls[i], units='q')
         q_256[i] = cals[i] * 256
 
-    max_cl = cls[np.where(q_256 > 1.5*max_q)[0][-1]]
-    max_alpha = q_to_mrads(10*min_q, beam_energy)/1.5
+    max_cl = cls[np.where(q_256 > 1.5 * max_q)[0][-1]]
+    max_alpha = q_to_mrads(10 * min_q, beam_energy) / 1.5
 
     print("Merlin Experimental Parameters")
     print("##############################")
@@ -378,5 +384,5 @@ def optimize_parameters(beam_energy, min_q, max_q):
           "---------------------")
     for i in range(0, len(cals)):
         print("%s\t\t\t%.1f\t\t\t\t\t%.1f" %
-              (cls[i], min_q/cals[i], max_q/cals[i]))
+              (cls[i], min_q / cals[i], max_q / cals[i]))
     return

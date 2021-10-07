@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of EMTools
+# This file is part of MerlinTools
 
 """
-Colors module for MerlinTools package
+Colors module for MerlinTools package.
 
 @author: Andrew Herzing
 """
@@ -33,7 +33,7 @@ just_blue = mpl.colors.\
 
 def normalize(image):
     """
-    Simple function to normalize an image between 0 and 255.
+    Normalize an image between 0 and 255.
 
     Args
     ----------
