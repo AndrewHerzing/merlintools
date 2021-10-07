@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*-
+#
+# This file is part of MerlinTools
+
+"""
+setup file for MerlinTools package.
+
+@author: Andrew Herzing
+"""
+
 from setuptools import setup
 
 setup(
@@ -8,16 +18,16 @@ setup(
     long_description=open('README.md').read(),
     extras={
             'with_pyxem': ['pyxem', ]
-            },
+    },
     install_requires=[
-            'numpy',
-            'hyperspy',
-            'fpd',
-            'tqdm',
-            ],
+        'numpy',
+        'hyperspy',
+        'fpd',
+        'tqdm',
+    ],
     extras_require={
-            'Full': ["pyxem", ],
-            },
+        'Full': ["pyxem", ],
+    },
     author='Andrew Herzing',
     author_email='andrew.herzing@nist.gov',
     license='GPL v3',
@@ -26,5 +36,5 @@ setup(
         'data analysis',
         'microscopy',
         '4D-STEM',
-        ],
+    ],
 )
