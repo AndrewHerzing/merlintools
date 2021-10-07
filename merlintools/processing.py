@@ -20,7 +20,12 @@ from merlintools import color
 
 def get_radial_profile(ds, com_yx):
     """
-    Determine scan shape from file size and exposure times.
+    Calculate radial profile for a 4D dataset.
+
+    Dataset does not need to be aligned.  Instead, the center-of-mass is provided
+    for each diffraction pattern and the profiles are calculated using the CoM as
+    as the center.  After all calculations, all profiles are truncated to the length of
+    the smallest profile.
 
     Args
     ----------
