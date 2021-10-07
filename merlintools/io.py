@@ -62,7 +62,7 @@ def get_exposure_times(mibfiles, n=None):
         for i in range(0, n):
             with open(mibfiles[i], 'r') as h:
                 line = h.readline(200)
-            exposures[i] = np.float32(line.split(',')[10])*1000
+            exposures[i] = np.float32(line.split(',')[10]) * 1000
     else:
         if type(mibfiles) is list:
             mibfiles = mibfiles[0]
@@ -84,8 +84,7 @@ def get_exposure_times(mibfiles, n=None):
         # and read all exposures
         if n is None:
             logger.info("Reading all exposure times")
-            n = int(os.path.getsize(mibfiles) /
-                    (data_length*(256**2) + header_length))
+            n = int(os.path.getsize(mibfiles) / (data_length * (256**2) + header_length))
         else:
             logger.info("Reading %s exposure times" % n)
         exposures = np.zeros(n)
@@ -183,7 +182,7 @@ def parse_mib_header(mibfile):
     mib_hdr['GainMode'] = np.int32(hdr_temp[13])
     mib_hdr['Thresholds'] = np.zeros(8, np.float32)
     for i in range(0, 8):
-        mib_hdr['Thresholds'][i] = np.float32(hdr_temp[14+i])
+        mib_hdr['Thresholds'][i] = np.float32(hdr_temp[14 + i])
     mib_hdr['DACs'] = {}
     mib_hdr['DACs']['Format'] = hdr_temp[22]
     mib_hdr['DACs']['Thresh0'] = np.uint16(hdr_temp[23])
@@ -248,13 +247,12 @@ def get_scan_shape(mibfiles):
     elif mib_hdr['PixDepth'] == 'U32':
         data_length = 4
     if len(mibfiles) == 1:
-        total_frames = int(os.path.getsize(mibfiles[0]) /
-                           (data_length*n_detector_pix + header_length))
+        total_frames = int(os.path.getsize(mibfiles[0]) / (data_length * n_detector_pix + header_length))
     else:
         total_frames = len(mibfiles)
     logger.info("Total frames: %s" % total_frames)
 
-    exp = 1000*get_exposure_times(mibfiles)
+    exp = 1000 * get_exposure_times(mibfiles)
     exp_round = np.round(exp, 0)
     vals, counts = np.unique(exp_round, return_counts=True)
     exposure_time, flyback_time = vals[counts.argsort()[::-1]][0:2]
@@ -280,6 +278,7 @@ def get_scan_shape(mibfiles):
     scanYalu = [np.arange(0, scan_height), 'y', 'pixels']
     return scanXalu, scanYalu, skip_frames, total_frames
 
+
 def get_merlin_parameters(data):
     """
     Get Merlin parameters for 4D-STEM data from FPD HDF5 file.
@@ -292,24 +291,25 @@ def get_merlin_parameters(data):
     Returns
     ----------
     params : dict
-        Dictionary containing the Merlin frame time, scan shape, and detector shape
+        Dictionary containing the Merlin frame time, scan shape,
+        and detector shape
 
     """
     if isinstance(data, h5py.File):
         scanY, scanX, detY, detX = data["fpd_expt/fpd_data/data"].shape
-        exposures = np.round(data["fpd_expt/Exposure/data"][...]/1e6, 1)
+        exposures = np.round(data["fpd_expt/Exposure/data"][...] / 1e6, 1)
         frame_times, counts = np.unique(exposures, return_counts=True)
         frame_time = frame_times[counts.argmax()]
-        thresholds = data["fpd_expt/Threshold/data"][...][:,:,0]
+        thresholds = data["fpd_expt/Threshold/data"][...][:, :, 0]
         threshold = np.unique(thresholds[~np.isnan(thresholds)])[0]
 
     elif isinstance(data, str):
         with h5py.File(data, 'r') as h5:
             scanY, scanX, detY, detX = h5["fpd_expt/fpd_data/data"].shape
-            exposures = np.round(h5["fpd_expt/Exposure/data"][...]/1e6, 1)
+            exposures = np.round(h5["fpd_expt/Exposure/data"][...] / 1e6, 1)
             frame_times, counts = np.unique(exposures, return_counts=True)
             frame_time = frame_times[counts.argmax()]
-            thresholds = h5["fpd_expt/Threshold/data"][...][:,:,0]
+            thresholds = h5["fpd_expt/Threshold/data"][...][:, :, 0]
             threshold = np.unique(thresholds[~np.isnan(thresholds)])[0]
 
     params = {'Frame time': frame_time,
@@ -317,6 +317,7 @@ def get_merlin_parameters(data):
               'Detector shape': [detY, detX],
               'Threshold': threshold}
     return params
+
 
 def get_microscope_parameters(data, display=False):
     """
@@ -331,7 +332,8 @@ def get_microscope_parameters(data, display=False):
     Returns
     ----------
     params : dict
-        Dictionary containing the microscope voltage, camera length, and magnification
+        Dictionary containing the microscope voltage, camera length,
+        and magnification
 
     """
 
@@ -340,9 +342,9 @@ def get_microscope_parameters(data, display=False):
             cl = float(data["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
                             "Microscope Info/STEM Camera Length"][...])
             ht = float(data["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
-                            "Microscope Info/Voltage"][...])/1000
+                            "Microscope Info/Voltage"][...]) / 1000
             mag = float(data["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
-                            "Microscope Info/Indicated Magnification"][...])
+                             "Microscope Info/Indicated Magnification"][...])
         else:
             cl = "Unknown"
             ht = "Unknown"
@@ -351,11 +353,11 @@ def get_microscope_parameters(data, display=False):
         with h5py.File(data, 'r') as h5:
             if "DM0" in h5["/fpd_expt/"].keys():
                 cl = float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
-                            "Microscope Info/STEM Camera Length"][...])
+                              "Microscope Info/STEM Camera Length"][...])
                 ht = float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
-                            "Microscope Info/Voltage"][...])/1000
+                              "Microscope Info/Voltage"][...]) / 1000
                 mag = float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
-                            "Microscope Info/Indicated Magnification"][...])
+                               "Microscope Info/Indicated Magnification"][...])
             else:
                 cl = "Unknown"
                 ht = "Unknown"
@@ -363,11 +365,11 @@ def get_microscope_parameters(data, display=False):
     else:
         if "DM0" in data._fields():
             cl = float(data.DM0.tags["ImageList/TagGroup0/ImageTags/"
-                                "Microscope Info/STEM Camera Length"][...])
+                                     "Microscope Info/STEM Camera Length"][...])
             ht = float(data.DM0.tags["ImageList/TagGroup0/ImageTags/"
-                                "Microscope Info/Voltage"][...])/1000
+                                     "Microscope Info/Voltage"][...]) / 1000
             mag = float(data.DM0.tags["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
-                                    "Microscope Info/Indicated Magnification"][...])
+                                      "Microscope Info/Indicated Magnification"][...])
         else:
             cl = "Unknown"
             ht = "Unknown"
@@ -376,9 +378,10 @@ def get_microscope_parameters(data, display=False):
         print("Microscope voltage: %.1f kV" % ht)
         print("STEM Camera Length: %.1f mm" % cl)
         print("Magnification: %.1f X" % mag)
-    
+
     params = {'CL': cl, 'HT': ht, 'Magnification': mag}
     return params
+
 
 def get_spatial_axes_dict(nt):
     """
@@ -416,11 +419,12 @@ def get_spatial_axes_dict(nt):
         scaleY = scaleY * 1000
         originY = originY * 1000
 
-    axes_dict = {'axis-0':{'name':'y', 'offset':originY, 'units': unitsY,
-                           'scale': scaleY, 'size':sizeY},
-                 'axis-1':{'name':'x', 'offset':originX, 'units': unitsX,
-                           'scale': scaleX, 'size':sizeX}}
+    axes_dict = {'axis-0': {'name': 'y', 'offset': originY, 'units': unitsY,
+                            'scale': scaleY, 'size': sizeY},
+                 'axis-1': {'name': 'x', 'offset': originX, 'units': unitsX,
+                            'scale': scaleX, 'size': sizeX}}
     return axes_dict
+
 
 def get_experimental_parameters(rootpath="./"):
     """
@@ -438,17 +442,17 @@ def get_experimental_parameters(rootpath="./"):
 
     """
     h5files = glob.glob(rootpath + "**/*.hdf5", recursive=True)
-    h5files = [x for x in h5files if not x.endswith('Aligned.hdf5') or x.endswith('aligned.hdf5')] 
+    h5files = [x for x in h5files if not x.endswith('Aligned.hdf5') or x.endswith('aligned.hdf5')]
 
-    datapaths = [None]*len(h5files)
-    h5filenames = [None]*len(h5files)
-    hts = [None]*len(h5files)
-    cls = [None]*len(h5files)
-    mags = [None]*len(h5files)
-    scan_shapes = [None]*len(h5files)
-    det_shapes = [None]*len(h5files)
-    thresholds = [None]*len(h5files)
-    frame_times = [None]*len(h5files)
+    datapaths = [None] * len(h5files)
+    h5filenames = [None] * len(h5files)
+    hts = [None] * len(h5files)
+    cls = [None] * len(h5files)
+    mags = [None] * len(h5files)
+    scan_shapes = [None] * len(h5files)
+    det_shapes = [None] * len(h5files)
+    thresholds = [None] * len(h5files)
+    frame_times = [None] * len(h5files)
 
     for i in range(0, len(h5files)):
         datapaths[i], h5filenames[i] = os.path.split(h5files[i])
@@ -476,6 +480,7 @@ def get_experimental_parameters(rootpath="./"):
     df['Threshold'] = thresholds
 
     return df
+
 
 def fpd_check(data):
     """

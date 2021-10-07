@@ -25,7 +25,7 @@ def get_radial_profile(ds, com_yx):
     s : HyperSpy Signal1D
         Radial average as a function of beam scan position
     """
-    radial_mean = [None] * ds.shape[0]*ds.shape[1]
+    radial_mean = [None] * ds.shape[0] * ds.shape[1]
     idx = 0
     min_length = np.inf
     # r_pix_min = None
@@ -39,7 +39,7 @@ def get_radial_profile(ds, com_yx):
                 # r_pix_min = r_pix
             idx += 1
 
-    result = np.zeros([ds.shape[0]*ds.shape[1], min_length])
+    result = np.zeros([ds.shape[0] * ds.shape[1], min_length])
     for i in range(0, len(radial_mean)):
         result[i, :] = radial_mean[i][0:min_length]
     result = result.reshape([ds.shape[0], ds.shape[1], min_length])
@@ -112,7 +112,7 @@ def align_merlin(h5filename, sub_pixel=True, interpolation=3,
     ds = nt.fpd_data.data
     h5f = nt.file
 
-    idx_x, idx_y = np.int32(np.array(ds.shape[0:2])/2)
+    idx_x, idx_y = np.int32(np.array(ds.shape[0:2]) / 2)
 
     if apply_threshold:
         thresh_val = 0.5 * ds[idx_x, idx_y, :, :].max()
@@ -124,7 +124,7 @@ def align_merlin(h5filename, sub_pixel=True, interpolation=3,
                                         spf=1, plot=False)
 
         mask = fpdp.synthetic_aperture(shape=ds.shape[-2:], cyx=cyx,
-                                       rio=(0, cr*2.5), sigma=0)[0]
+                                       rio=(0, cr * 2.5), sigma=0)[0]
         mask = np.ceil(mask)
     else:
         mask = None

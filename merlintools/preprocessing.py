@@ -79,7 +79,7 @@ def merlin_to_fpd(rootpath=None, savepath=None, keep_unshaped=False,
     dirs = [x[0] for x in os.walk(rootpath)]
     empty_dirs = []
     for i in dirs:
-        if len(glob.glob(i+"/*.mib")) == 0:
+        if len(glob.glob(i + "/*.mib")) == 0:
             empty_dirs.append(i)
     [dirs.remove(i) for i in empty_dirs]
     temppaths = [None] * len(dirs)

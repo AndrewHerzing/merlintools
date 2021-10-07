@@ -134,6 +134,7 @@ def k_to_mrads(k, voltage):
     angle = 1000 * np.arcsin(k * wavelength / 2)
     return angle
 
+
 def q_to_mrads(q, voltage):
     """
     Convert from momentum transfer (nm^-1) value an angular value (mrads)
@@ -153,6 +154,7 @@ def q_to_mrads(q, voltage):
     wavelength = voltage_to_wavelength(voltage, True)
     angle = 1000 * np.arcsin(q / (2 * np.pi) * wavelength / 2)
     return angle
+
 
 def voltage_to_wavelength(voltage, relativistic=False):
     """
@@ -220,10 +222,11 @@ def calc_dose_pixel(probe_current, pixel_size, dwell_time):
     dose = 6.242e18 * probe_current * dwell_time / pixel_size**2
     return dose
 
+
 def calc_dose_probe(probe_current, probe_fwhm, dwell_time):
     '''
     Calulate electron based on the measured probe size
-    
+
     Args
     ---------
     probe_current : float
@@ -232,16 +235,17 @@ def calc_dose_probe(probe_current, probe_fwhm, dwell_time):
         Measured probe FWHM in nanometers
     dwell_time : float
         Per pixel dwell time in seconds
-    
+
     Returns
     ---------
     dose : float
         Calculated electron dose in electrons per square nanometer
-    
+
     '''
     n_electrons = 6.242e18 * probe_current * dwell_time
     dose = n_electrons / (np.pi*(probe_fwhm/2)**2)
     return dose
+
 
 def fit_func(x, A, exp):
     return A*x**exp
@@ -330,6 +334,7 @@ def get_calibration(beam_energy, cl, units='mrads'):
                          "Must be 'mrads', 'q', or 'k'" % units)
     return calibration
 
+
 def optimize_parameters(beam_energy, min_q, max_q):
     """
     Suggest camera length and convergence angle for experiment.
@@ -344,8 +349,8 @@ def optimize_parameters(beam_energy, min_q, max_q):
         Maximum scattering angle of interest in q units (A^-1/pixel)
 
     """
-    cls = ['38','48','60','77','100','130','160','195','245','300','380',
-           '450', '600', '770', '900', '1200']
+    cls = ['38', '48', '60', '77', '100', '130', '160', '195', '245', '300',
+           '380', '450', '600', '770', '900', '1200']
 
     cals = np.zeros(len(cls))
     q_256 = np.zeros(len(cls))
@@ -353,9 +358,8 @@ def optimize_parameters(beam_energy, min_q, max_q):
         cals[i] = get_calibration(beam_energy, cls[i], units='q')
         q_256[i] = cals[i] * 256
 
-    max_cl = cls[np.where(q_256>1.5*max_q)[0][-1]]
+    max_cl = cls[np.where(q_256 > 1.5*max_q)[0][-1]]
     max_alpha = q_to_mrads(10*min_q, beam_energy)/1.5
-
 
     print("Merlin Experimental Parameters")
     print("##############################")
@@ -368,8 +372,11 @@ def optimize_parameters(beam_energy, min_q, max_q):
 
     print("Suggested ADF Mask Locations")
     print("############################\n")
-    print("CL (mm)\t\tLocation for q_min (pixels))\t\tLocation for q_max (pixels)")
-    print("--------------------------------------------------------------------------------------")
+    print("CL (mm)\t\tLocation for q_min (pixels))\t\tLocation for q_max"
+          "(pixels)")
+    print("-----------------------------------------------------------------"
+          "---------------------")
     for i in range(0, len(cals)):
-        print("%s\t\t\t%.1f\t\t\t\t\t%.1f" % (cls[i], min_q/cals[i], max_q/cals[i]))
+        print("%s\t\t\t%.1f\t\t\t\t\t%.1f" %
+              (cls[i], min_q/cals[i], max_q/cals[i]))
     return
