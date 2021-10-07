@@ -331,7 +331,19 @@ def get_calibration(beam_energy, cl, units='mrads'):
     return calibration
 
 def optimize_parameters(beam_energy, min_q, max_q):
+    """
+    Suggest camera length and convergence angle for experiment.
 
+    Args
+    ----------
+    beam_energy : float
+        Beam energy in keV
+    min_q : float
+        Minimum scattering angle of interest in q units (A^-1/pixel)
+    max_q : float
+        Maximum scattering angle of interest in q units (A^-1/pixel)
+
+    """
     cls = ['38','48','60','77','100','130','160','195','245','300','380',
            '450', '600', '770', '900', '1200']
 

@@ -423,6 +423,20 @@ def get_spatial_axes_dict(nt):
     return axes_dict
 
 def get_experimental_parameters(rootpath="./"):
+    """
+    Create a Pandas DataFrame containing experimental parameters from HDF5 files.
+
+    Args
+    ----------
+    rootpath : str
+        Path to data.  All sub-folders will also be inspected
+
+    Returns
+    ----------
+    df : DataFrame
+        Pandas DataFrame containing the extracted experimental parameters
+
+    """
     h5files = glob.glob(rootpath + "**/*.hdf5", recursive=True)
     h5files = [x for x in h5files if not x.endswith('Aligned.hdf5') or x.endswith('aligned.hdf5')] 
 
@@ -464,6 +478,20 @@ def get_experimental_parameters(rootpath="./"):
     return df
 
 def fpd_check(data):
+    """
+    Check if a file is an FPD-created HDF5
+
+    Args
+    ----------
+    data : str
+        Filename to check
+
+    Returns
+    ----------
+    bool
+        If True, file is in FPD format.  If False, the format is unknown.
+
+    """
     if isinstance(data, str):
         with h5py.File(data, 'r') as h5:
             if "/fpd_expt/" in h5.keys():

@@ -2,9 +2,9 @@ import numpy as np
 import matplotlib.pylab as plt
 
 
-def plot_most_intense_patterns(dataset, im, ndiffs=10, logscale=True):
+def plot_most_intense_patterns(dataset, im, ndps=10, logscale=True):
     """
-    Plot the diffraction patterns at the ndiffs most intense locations
+    Plot the diffraction patterns at the ndps most intense locations
     in an image.
 
     Args
@@ -13,7 +13,7 @@ def plot_most_intense_patterns(dataset, im, ndiffs=10, logscale=True):
         4D-STEM dataset.
     im : NumPy array
         Image to use for selection of locations.
-    ndiffs : integer
+    ndps : integer
         Number of patterns to plot.
     logscale : boolean
         If True, plot patterns on a log scale.
@@ -24,13 +24,13 @@ def plot_most_intense_patterns(dataset, im, ndiffs=10, logscale=True):
         Locations of most intense patterns.
 
     """
-    nrows = int(np.ceil(ndiffs/3))
-    idx = np.ravel(im).argsort()[::-1][0:ndiffs]
+    nrows = int(np.ceil(ndps/3))
+    idx = np.ravel(im).argsort()[::-1][0:ndps]
     fig, ax = plt.subplots(nrows, 3, figsize=(9, 3*nrows))
     n = 0
-    locs = np.zeros([ndiffs, 2], np.int32)
+    locs = np.zeros([ndps, 2], np.int32)
     for i in ax.flat:
-        if n < ndiffs:
+        if n < ndps:
             locs[n, :] = np.unravel_index(idx[n], im.shape)
             diff = dataset[locs[n][0], locs[n][1], :, :]
             if logscale:
