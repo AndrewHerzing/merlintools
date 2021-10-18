@@ -68,8 +68,10 @@ def radial_profile(ds, com_yx, crop=True):
     else:
         bins = np.array(np.empty([ds.shape[0], ds.shape[1]]), dtype='object')
         radial = np.array(np.empty([ds.shape[0], ds.shape[1]]), dtype='object')
-        bins[:, :] = res[:, :][0]
-        radial[:, :] = res[:, :][1]
+        for i in range(0, res.shape[0]):
+            for j in range(0, res.shape[1]):
+                bins[i, j] = res[i, j][0]
+                radial[i, j] = res[i, j][1]
     return bins, radial
 
 
