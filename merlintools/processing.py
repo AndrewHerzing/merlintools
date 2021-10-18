@@ -18,7 +18,7 @@ import matplotlib.pylab as plt
 from merlintools import color
 
 
-def get_radial_profile(ds, com_yx):
+def radial_profile(ds, com_yx, crop=True):
     """
     Calculate radial profile for a 4D dataset.
 
@@ -34,32 +34,43 @@ def get_radial_profile(ds, com_yx):
     com_yx : tuple
         List of center point for each frame, usually determined by center
         of mass analysis
+    crop : bool
+        If True, crop all profiles to a common size.
 
     Returns
     ----------
-    s : HyperSpy Signal1D
+    bins : NumPy Array
+        Bins for radial average result
+    radial : NumPy Array
         Radial average as a function of beam scan position
     """
-    radial_mean = [None] * ds.shape[0] * ds.shape[1]
-    idx = 0
-    min_length = np.inf
-    # r_pix_min = None
-    for i in range(0, ds.shape[0]):
-        for j in range(0, ds.shape[1]):
-            r_pix, radial_mean[idx] = fpdp.radial_profile(ds[i, j, :, :],
-                                                          com_yx[:, i, j],
-                                                          plot=False, spf=1)
-            if radial_mean[idx].shape[0] < min_length:
-                min_length = radial_mean[idx].shape[0]
-                # r_pix_min = r_pix
-            idx += 1
+    def _radial_func(frame, center):
+        r_pix, rms = fpdp.radial_profile(frame, center)
+        return r_pix, rms
 
-    result = np.zeros([ds.shape[0] * ds.shape[1], min_length])
-    for i in range(0, len(radial_mean)):
-        result[i, :] = radial_mean[i][0:min_length]
-    result = result.reshape([ds.shape[0], ds.shape[1], min_length])
-    s = hs.signals.Signal1D(result)
-    return s
+    cyx = np.moveaxis(com_yx, 0, -1)
+
+    res = fpdp.map_image_function(ds, nr=None, nc=None,
+                                  func=_radial_func, mapped_params={'center': cyx})
+
+    min_length = np.inf
+    for i in range(0, res.shape[0]):
+        for j in range(0, res.shape[1]):
+            if res[i, j][0].shape[0] < min_length:
+                min_length = res[i, j][0].shape[0]
+
+    if crop:
+        radial = np.zeros([res.shape[0], res.shape[1], min_length])
+        bins = res[0, 0][0][0:min_length]
+        for i in range(0, res.shape[0]):
+            for j in range(0, res.shape[1]):
+                radial[i, j, :] = res[i, j][1][0:min_length]
+    else:
+        bins = np.array([99, 99], dtype='object')
+        radial = np.array([99, 99], dtype='object')
+        bins[:, :] = res[:, :][0]
+        radial[:, :] = res[:, :][1]
+    return bins, radial
 
 
 def shift_func(image, scanYind, scanXind, shift_array, sub_pixel=True,
