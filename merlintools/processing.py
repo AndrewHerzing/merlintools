@@ -254,7 +254,7 @@ def get_max_dps(data_4d, image, n_pix=100):
 
     Args
     ----------
-    ds : NumPy array
+    data_4d : NumPy array
         4D-STEM dataset
     image : NumPy array
         Image to be used for locating diffraction patterns.
@@ -270,8 +270,8 @@ def get_max_dps(data_4d, image, n_pix=100):
     max_locs = image.ravel().argsort()[::-1]
 
     for i in range(0, n_pix):
-        row, col = np.unravel_index(max_locs[i], [128, 128])
-        dps[i] = data_4d[0][row, col]
+        row, col = np.unravel_index(max_locs[i], data_4d.shape[0:2])
+        dps[i] = data_4d[row, col, :, :]
 
     dps = hs.signals.Signal2D(dps)
     return dps
