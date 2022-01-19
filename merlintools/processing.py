@@ -18,7 +18,7 @@ import matplotlib.pylab as plt
 from merlintools import color
 
 
-def radial_profile(ds, com_yx, crop=True):
+def radial_profile(ds, com_yx, crop=True, recip_calib=None):
     """
     Calculate radial profile for a 4D dataset.
 
@@ -36,6 +36,8 @@ def radial_profile(ds, com_yx, crop=True):
         of mass analysis
     crop : bool
         If True, crop all profiles to a common size.
+    recip_calib : float
+        Reciprocal space calibration
 
     Returns
     ----------
@@ -45,7 +47,7 @@ def radial_profile(ds, com_yx, crop=True):
         Radial average as a function of beam scan position
     """
     def _radial_func(frame, center):
-        r_pix, rms = fpdp.radial_profile(frame, center)
+        r_pix, rms = fpdp.radial_profile(frame, center, r_nm_pp=recip_calib)
         return r_pix, rms
 
     cyx = np.moveaxis(com_yx, 0, -1)
