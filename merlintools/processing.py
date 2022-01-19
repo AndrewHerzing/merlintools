@@ -279,3 +279,34 @@ def get_max_dps(data_4d, image, n_pix=100):
 
     dps = hs.signals.Signal2D(dps)
     return dps
+
+def synthetic_image(data4d, com_yx, radii):
+    """
+    Extract a virtual image using a radial mask with varying center.
+
+    Args
+    ----------
+    data4d : NumPy array
+        4D-STEM dataset
+    com_yx : NumPy array
+        Center location for each diffraction pattern.
+    radii : list
+        Inner and outer radius for the mask.
+
+    Returns
+    ----------
+    im : NumPy array
+        Virtual image
+
+    """
+
+    def f(image, radii, cyx):
+        apt = fpdp.synthetic_aperture((256,256),cyx,rio=radii)[0]
+        res = (image * apt).sum((0,1))
+        return res
+    
+    cyx = np.moveaxis(com_yx, 0, -1)
+    
+    im = fpdp.map_image_function(data4d, nr=None, nc=None,
+                                 func=f, params={'radii': radii}, mapped_params={'cyx' : cyx})
+    return im
