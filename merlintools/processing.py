@@ -318,7 +318,7 @@ def get_virtual_images(data4d, com_yx, radii, sub_pixel=True, nr=128, nc=128):
         return res
     
     scanY, scanX, detY, detX = data4d.shape
-    center_yx = data4d.shape[-2:]/2
+    center_yx = np.array(data4d.shape[-2:])/2
 
     apt = fpdp.synthetic_aperture(data4d.shape[-2:], center_yx, radii)
     n_apts = apt.shape[0]
