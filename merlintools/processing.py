@@ -280,7 +280,7 @@ def get_max_dps(data_4d, image, n_pix=100):
     dps = hs.signals.Signal2D(dps)
     return dps
 
-def synthetic_image(data4d, com_yx, radii):
+def get_virtual_images(data4d, com_yx, radii, sub_pixel=True, nr=128, nc=128):
     """
     Extract a virtual image using a radial mask with varying center.
 
@@ -292,21 +292,50 @@ def synthetic_image(data4d, com_yx, radii):
         Center location for each diffraction pattern.
     radii : list
         Inner and outer radius for the mask.
+    sub_pixel : bool
+        If True, shift masks using cubic interpolation. Otherwise, shifts are
+        rounded to the nearest integer and no interpolation is used.
+    nr, nc : int
+        Chunks
 
     Returns
     ----------
-    im : NumPy array
-        Virtual image
+    v_images : NumPy array
+        Virtual images
 
     """
 
-    def f(image, radii, cyx):
-        apt = fpdp.synthetic_aperture((256,256),cyx,rio=radii)[0]
-        res = (image * apt).sum((0,1))
+    def f_pixel(image, mask, shift):
+        mask_shifted = np.zeros_like(mask)
+        mask_shifted = [ndimage.shift(mask[i], shift, order=0) for i in range(0,mask.shape[0])]
+        res = (image * mask_shifted)
         return res
     
-    cyx = np.moveaxis(com_yx, 0, -1)
+    def f_subpixel(image, mask, shift):
+        mask_shifted = np.zeros_like(mask)
+        mask_shifted = [ndimage.shift(mask[i], shift, order=3) for i in range(0,mask.shape[0])]
+        res = (image * mask_shifted)
+        return res
     
-    im = fpdp.map_image_function(data4d, nr=None, nc=None,
-                                 func=f, params={'radii': radii}, mapped_params={'cyx' : cyx})
-    return im
+    scanY, scanX, detY, detX = data4d.shape
+    center_yx = data4d.shape[-2:]/2
+
+    apt = fpdp.synthetic_aperture(data4d.shape[-2:], center_yx, radii)
+    n_apts = apt.shape[0]
+    
+    com_shifts = np.moveaxis(com_yx, 0, -1) - center_yx
+
+    if not sub_pixel:
+        com_shifts = np.int32(np.round(com_shifts))
+        v_images = fpdp.map_image_function(data4d, nr=nr, nc=nc,
+                                           func=f_pixel,
+                                           params={'mask': apt},
+                                           mapped_params={'shift': com_shifts})
+    else:
+        v_images = fpdp.map_image_function(data4d, nr=nr, nc=nc,
+                                           func=f_subpixel,
+                                           params={'mask': apt},
+                                           mapped_params={'shift': com_shifts})
+
+    v_images = v_images.reshape([n_apts, detY, detX, scanY, scanX]).sum((1,2))
+    return v_images
