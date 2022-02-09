@@ -113,7 +113,7 @@ def shift_func(image, scanYind, scanXind, shift_array, sub_pixel=True,
 
 
 def align_merlin(h5filename, sub_pixel=True, interpolation=3,
-                 apply_threshold=True, apply_mask=True):
+                 apply_threshold=True, apply_mask=True, output_path=None):
     """
     Align the data using fpd center of mass analysis.
 
@@ -133,12 +133,22 @@ def align_merlin(h5filename, sub_pixel=True, interpolation=3,
         half of the maximum value of the central pattern.
     apply_mask : bool
         If True, mask data to region around central beam.
-
+    output_path : str
+        If None, save to same path as input data.  Otherwise, save to the
+        specified path.
 
     """
-    coms_file = os.path.splitext(h5filename)[0] + "_CoMs.npy"
-    shifts_file = os.path.splitext(h5filename)[0] + "_Shifts.npy"
-    ali_file = os.path.splitext(h5filename)[0] + "_Aligned.hdf5"
+    if not output_path:
+        coms_file = os.path.splitext(h5filename)[0] + "_CoMs.npy"
+        shifts_file = os.path.splitext(h5filename)[0] + "_Shifts.npy"
+        ali_file = os.path.splitext(h5filename)[0] + "_Aligned.hdf5"
+    else:
+        if output_path[-1] != '/':
+            output_path = output_path + '/'
+        rootname = os.path.splitext(os.path.split(h5filename)[1])[0]
+        coms_file = output_path + rootname + "_CoMs.npy"
+        shifts_file = output_path + rootname + "_Shifts.npy"
+        ali_file = output_path + rootname + "_Aligned.hdf5"
 
     nt = fpdf.fpd_to_tuple(h5filename, fpd_check=False)
     sum_dif = nt.fpd_sum_dif.data
