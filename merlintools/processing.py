@@ -58,8 +58,8 @@ def radial_profile(ds, center_yx, recip_calib=None, crop=True, spf=1.0):
     res = fpdp.map_image_function(ds, nr=None, nc=None,
                                   func=_radial_func,
                                   mapped_params={'center': cyx},
-                                  unmapped_params={'rnm_pp': recip_calib,
-                                                   'spf': spf})
+                                  params={'rnm_pp': recip_calib,
+                                          'spf': spf})
 
     min_length = np.inf
     for i in range(0, res.shape[0]):
