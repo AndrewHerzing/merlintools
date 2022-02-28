@@ -75,7 +75,8 @@ def radial_profile(ds, center_yx, recip_calib=None, crop=True):
             for j in range(0, res.shape[1]):
                 bins[i, j] = res[i, j][0]
                 radial[i, j] = res[i, j][1]
-    bins = bins * recip_calib
+    if recip_calib:
+        bins = bins * recip_calib
     return bins, radial
 
 
