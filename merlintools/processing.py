@@ -18,7 +18,7 @@ import matplotlib.pylab as plt
 from merlintools import color
 
 
-def radial_profile(ds, center_yx, recip_calib=None, crop=True):
+def radial_profile(ds, center_yx, recip_calib=None, crop=True, spf=1.0):
     """
     Calculate radial profile for a 4D dataset.
 
@@ -38,6 +38,9 @@ def radial_profile(ds, center_yx, recip_calib=None, crop=True):
         If True, crop all profiles to a common size.
     recip_calib : float
         Reciprocal space calibration
+    spf : float
+        Subsample pixel factor passed to fpd radial_profile function.  Default is 1.0.
+
 
     Returns
     ----------
@@ -46,15 +49,17 @@ def radial_profile(ds, center_yx, recip_calib=None, crop=True):
     radial : NumPy Array
         Radial average as a function of beam scan position
     """
-    def _radial_func(frame, center):
-        r_pix, rms = fpdp.radial_profile(frame, center)
+    def _radial_func(frame, center, rnm_pp, spf):
+        r_pix, rms = fpdp.radial_profile(frame, center, rnm_pp=rnm_pp, spf=spf)
         return r_pix, rms
 
     cyx = np.moveaxis(center_yx, 0, -1)
 
     res = fpdp.map_image_function(ds, nr=None, nc=None,
                                   func=_radial_func,
-                                  mapped_params={'center': cyx})
+                                  mapped_params={'center': cyx},
+                                  unmapped_params={'rnm_pp': recip_calib,
+                                                   'spf': spf})
 
     min_length = np.inf
     for i in range(0, res.shape[0]):
