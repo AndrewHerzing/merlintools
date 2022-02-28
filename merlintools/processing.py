@@ -49,8 +49,8 @@ def radial_profile(ds, center_yx, recip_calib=None, crop=True, spf=1.0):
     radial : NumPy Array
         Radial average as a function of beam scan position
     """
-    def _radial_func(frame, center, rnm_pp, spf):
-        r_pix, rms = fpdp.radial_profile(frame, center, rnm_pp=rnm_pp, spf=spf)
+    def _radial_func(frame, center, r_nm_pp, spf):
+        r_pix, rms = fpdp.radial_profile(frame, center, r_nm_pp=r_nm_pp, spf=spf)
         return r_pix, rms
 
     cyx = np.moveaxis(center_yx, 0, -1)
@@ -58,7 +58,7 @@ def radial_profile(ds, center_yx, recip_calib=None, crop=True, spf=1.0):
     res = fpdp.map_image_function(ds, nr=None, nc=None,
                                   func=_radial_func,
                                   mapped_params={'center': cyx},
-                                  params={'rnm_pp': recip_calib,
+                                  params={'r_nm_pp': recip_calib,
                                           'spf': spf})
 
     min_length = np.inf
