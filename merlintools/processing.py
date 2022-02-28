@@ -18,7 +18,7 @@ import matplotlib.pylab as plt
 from merlintools import color
 
 
-def radial_profile(ds, com_yx, recip_calib=None, crop=True):
+def radial_profile(ds, center_yx, recip_calib=None, crop=True):
     """
     Calculate radial profile for a 4D dataset.
 
@@ -31,7 +31,7 @@ def radial_profile(ds, com_yx, recip_calib=None, crop=True):
     ----------
     ds : NumPy array
         4D-STEM dataset
-    com_yx : tuple
+    center_yx : tuple
         List of center point for each frame, usually determined by center
         of mass analysis
     crop : bool
@@ -50,7 +50,7 @@ def radial_profile(ds, com_yx, recip_calib=None, crop=True):
         r_pix, rms = fpdp.radial_profile(frame, center)
         return r_pix, rms
 
-    cyx = np.moveaxis(com_yx, 0, -1)
+    cyx = np.moveaxis(center_yx, 0, -1)
 
     res = fpdp.map_image_function(ds, nr=None, nc=None,
                                   func=_radial_func,
