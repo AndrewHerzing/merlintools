@@ -15,6 +15,10 @@ import logging
 import h5py
 import glob
 import pandas as pd
+from merlintools.utils import get_calibration
+from merlintools.processing import radial_profile
+import fpd.fpd_file as fpdf
+import fpd.fpd_processing as fpdp
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -516,3 +520,108 @@ def fpd_check(data):
             return True
         else:
             return False
+
+def create_dataset(h5file):
+    """
+    Read an FPD dataset and perform useful operations.
+
+    Args
+    ----------
+    h5file : str
+        Filename of FPD generated HDF5 file
+
+    Returns
+    ----------
+    dataset : dict
+        Dictionary containing all FPD generated data as well as microscope parameters,
+        reciprocal space calibration, center of mass, alignment shifts, and aligned
+        radial profile.
+
+    """
+    params = get_microscope_parameters(h5file)
+    qcal = get_calibration(params['HT'],params['CL'],'q')
+    nt = fpdf.fpd_to_tuple(h5file)
+    com_yx = fpdp.center_of_mass(nt.fpd_data.data, 32, 32, print_stats=False)
+    min_center = np.percentile(com_yx, 50, (-2, -1))
+    shifts = -(com_yx - min_center[..., None, None])
+    profile = radial_profile(nt.fpd_data.data, com_yx, qcal)
+    dataset = {'filename': h5file,
+               'nt': nt,
+               'params': params,
+               'qcal': qcal,
+               'qcal_units': 'A^-1',
+               'com_yx' : com_yx,
+               'min_center' : min_center,
+               'shifts' : shifts,
+               'radial_profile' : profile,
+               'apertures': None,
+               'images': {}}
+    return dataset
+
+def save_results(h5filename, dataset):
+    """
+    Save an FPD dataset along with other parameters to HDF5 file.
+
+    Args
+    ----------
+    h5filename : str
+        Filename for saving
+
+    dataset : dict
+        Dictionary as specified by merlintools.io.create_dataset.
+
+    """
+    with h5py.File(h5filename, 'w') as h5:
+        for k in dataset.keys():
+            if k == 'nt':
+                pass
+            elif k == 'params':
+                for item, value in dataset['params'].items():
+                    h5.create_dataset(k + '/' + item, data=value)
+            elif k == 'radial_profile':
+                grp = h5.create_group(k)
+                grp.create_dataset('x', data=dataset[k][0])
+                grp.create_dataset('y', data=dataset[k][1])
+            elif k == 'images':
+                grp = h5.create_group('images')
+                for im in dataset['images'].keys():
+                    grp.create_dataset(im, data=dataset['images'][im])
+            else:
+                h5.create_dataset(k, data=dataset[k])
+    return
+
+def read_h5_results(h5file):
+    """
+    Read HDF5 file generated using merlintools.io.save_results.
+
+    Args
+    ----------
+    h5file : str
+        Filename of HDF5 file to read
+
+    Returns
+    ----------
+    dataset : dict
+        Dictionary containing all FPD generated data as well as microscope parameters,
+        reciprocal space calibration, center of mass, alignment shifts, and aligned
+        radial profile, etc.
+
+    """
+    dataset = {}
+    with h5py.File(h5file,'r') as h5:
+        dataset['filename'] = h5['filename'][()].decode()
+        dataset['nt'] = fpdf.fpd_to_tuple(dataset['filename'])
+        dataset['params'] = {'CL': np.float32(h5['params/CL'][...]),
+                          'HT': np.float32(h5['params/HT'][...]),
+                          'Magnification': np.float32(h5['params/Magnification'][...])}
+        dataset['qcal'] = h5['qcal'][...]
+        dataset['qcal_units'] = h5['qcal_units'][...]
+        dataset['min_center'] = h5['min_center'][...]
+        dataset['shifts'] = h5['shifts'][...]
+        dataset['com_yx'] = h5['com_yx'][...]
+        dataset['radial_profile'] = [h5['radial_profile/x'][...], h5['radial_profile/y'][...]]
+        dataset['apertures'] = h5['apertures'][...]
+        dataset['images'] = {}
+        for im in h5['images'].keys():
+            dataset['images'][im] = h5['images'][im][...]
+    return dataset
