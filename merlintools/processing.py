@@ -55,7 +55,7 @@ def radial_profile(ds, center_yx, recip_calib=None, crop=True, spf=1.0):
 
     cyx = np.moveaxis(center_yx, 0, -1)
 
-    res = fpdp.map_image_function(ds, nr=None, nc=None,
+    res = fpdp.map_image_function(ds, nr=32, nc=32,
                                   func=_radial_func,
                                   mapped_params={'center': cyx},
                                   params={'r_nm_pp': recip_calib,
