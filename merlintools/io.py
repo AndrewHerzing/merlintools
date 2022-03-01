@@ -555,6 +555,7 @@ def create_dataset(h5file):
                'shifts' : shifts,
                'radial_profile' : profile,
                'apertures': None,
+               'radii': None,
                'images': {}}
     return dataset
 
@@ -620,6 +621,7 @@ def read_h5_results(h5file):
         dataset['shifts'] = h5['shifts'][...]
         dataset['com_yx'] = h5['com_yx'][...]
         dataset['radial_profile'] = [h5['radial_profile/x'][...], h5['radial_profile/y'][...]]
+        dataset['radii'] = h5['radii'][...]
         dataset['apertures'] = h5['apertures'][...]
         dataset['images'] = {}
         for im in h5['images'].keys():
