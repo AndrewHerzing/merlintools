@@ -630,3 +630,33 @@ def read_h5_results(h5file):
         for im in h5['images'].keys():
             dataset['images'][im] = h5['images'][im][...]
     return dataset
+
+def read_single_mib(filename, det_shape=[256,256]):
+    """
+    Quickly read an individual MIB file.
+
+    Args
+    ----------
+    filename : str
+        MIB file to be read
+    det_shape : tuple
+        Size of detectore. Default is 256x256
+
+    Returns
+    ----------
+    dp : NumPy array
+
+    """
+    header = parse_mib_header(filename)
+    header_length = header['DataOffset']
+    data_type = header['PixDepth']
+    if data_type == 'U16':
+        data_type = '>H'
+    elif data_type == 'U32':
+        data_type = '>L'
+
+    with open(filename, 'rb') as h:
+        _ = np.fromfile(h, np.int8, header_length)
+        dp = np.fromfile(h, np.uint16)
+    dp = dp.reshape(det_shape)
+    return dp
