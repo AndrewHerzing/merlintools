@@ -542,6 +542,9 @@ def create_dataset(h5file):
     qcal = get_calibration(params['HT'],params['CL'],'q')
     nt = fpdf.fpd_to_tuple(h5file)
     com_yx = fpdp.center_of_mass(nt.fpd_data.data, 32, 32, print_stats=False)
+    # Remove NaN's from com_yx and replace with nearest non-NaN value
+    mask = np.isnan(com_yx)
+    com_yx[mask] = np.interp(np.flatnonzero(mask), np.flatnonzero(~mask), com_yx[~mask])
     min_center = np.percentile(com_yx, 50, (-2, -1))
     shifts = -(com_yx - min_center[..., None, None])
     profile = radial_profile(nt.fpd_data.data, com_yx, qcal)
