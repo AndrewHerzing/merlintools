@@ -386,3 +386,9 @@ def optimize_parameters(beam_energy, min_q, max_q):
         print("%s\t\t\t%.1f\t\t\t\t\t%.1f" %
               (cls[i], min_q / cals[i], max_q / cals[i]))
     return
+
+def load_calibration_file(beam_energy, camera_length):
+    filename = os.path.join(merlintools_path, "calibrations/data",
+                                     "%skV/CL_%smm.mib" % (beam_energy,camera_length))
+    dp = merlintools.io.read_single_mib(filename, 256,256)
+    return dp
