@@ -82,6 +82,41 @@ def radial_profile(ds, center_yx, recip_calib=None, crop=True, spf=1.0):
                 radial[i, j] = res[i, j][1]
     return bins, radial
 
+def shift_align(ds, shifts, nr=16, nc=16, sub_pixel=True, interpolation=3):
+    """
+    Align data given shift array.
+
+    Args
+    ----------
+    ds : NumPy array
+        4D-STEM dataset
+    shifts : NumPy array
+        Array of shifts of shape (2, scanY, scanX)
+    sub_pixel : bool
+        If True, use interpolation to perform sub-pixel shifts.
+    interpolation : int
+        Degree of interpolation
+
+    Returns
+    ----------
+    ali : NumPy Array
+        Aligned version of ds
+    """
+    def ali_func(image, shift_array, sub_pixel, interpolation):
+        if sub_pixel:
+            syx = shift_array
+        else:
+            syx = np.int32(np.round(shift_array, 0))
+            interpolation = 0
+        new_im = ndimage.shift(image, -syx, order=interpolation)
+        return new_im
+    
+    ali = fpdp.map_image_function(ds, nr, nc, func=ali_func,
+                                  mapped_params={'shift_array': np.moveaxis(shifts, 0, -1)},
+                                  params={'sub_pixel': sub_pixel,
+                                          'interpolation': interpolation})
+    ali = ali.T.reshape(ds.shape)
+    return ali
 
 def align_merlin(h5filename, sub_pixel=True, interpolation=3,
                  apply_threshold=True, apply_mask=True, output_path=None):
