@@ -83,39 +83,6 @@ def radial_profile(ds, center_yx, recip_calib=None, crop=True, spf=1.0):
     return bins, radial
 
 
-def shift_func(image, scanYind, scanXind, shift_array, sub_pixel=True,
-               interpolation=3):
-    """
-    Center 4D-STEM data using align_merlin.
-
-    Args
-    ----------
-    image : NumPy array
-        4D-STEM dataset
-    scanYind, scanXind : int
-        Scan indices for iteration
-    shift_array : NumPy array
-        Array containing x and y shifts for each pattern
-    sub_pixel : bool
-        If True, perform sub-pixel alignment. May cause interpolation
-        artifacts.
-    interpolation : int
-        Order of interpolation for sub-pixel alignment
-
-    Returns
-    ----------
-    new_im : NumPy array
-        Shifted version of input image
-    """
-    if sub_pixel:
-        syx = shift_array[:, scanYind, scanXind]
-    else:
-        syx = np.int32(np.round(shift_array[:, scanYind, scanXind], 0))
-        interpolation = 0
-    new_im = ndimage.shift(image, -syx, order=interpolation)
-    return new_im
-
-
 def align_merlin(h5filename, sub_pixel=True, interpolation=3,
                  apply_threshold=True, apply_mask=True, output_path=None):
     """
@@ -142,6 +109,16 @@ def align_merlin(h5filename, sub_pixel=True, interpolation=3,
         specified path.
 
     """
+    def shift_func(image, scanYind, scanXind, shift_array, sub_pixel=True,
+               interpolation=3):
+        if sub_pixel:
+            syx = shift_array[:, scanYind, scanXind]
+        else:
+            syx = np.int32(np.round(shift_array[:, scanYind, scanXind], 0))
+            interpolation = 0
+        new_im = ndimage.shift(image, -syx, order=interpolation)
+        return new_im
+
     if not output_path:
         coms_file = os.path.splitext(h5filename)[0] + "_CoMs.npy"
         shifts_file = os.path.splitext(h5filename)[0] + "_Shifts.npy"
