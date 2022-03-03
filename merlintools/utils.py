@@ -14,6 +14,7 @@ import logging
 import json
 import os
 import merlintools
+import glob
 
 merlintools_path = os.path.dirname(merlintools.__file__)
 
@@ -387,8 +388,13 @@ def optimize_parameters(beam_energy, min_q, max_q):
               (cls[i], min_q / cals[i], max_q / cals[i]))
     return
 
-def load_calibration_file(beam_energy, camera_length):
-    filename = os.path.join(merlintools_path, "calibrations/data",
-                                     "%skV/CL_%smm.mib" % (beam_energy,camera_length))
-    dp = merlintools.io.read_single_mib(filename, 256,256)
-    return dp
+def load_calibration_file(beam_energy, camera_length, also_alpha_data=False):
+    datapath = os.path.join(merlintools_path, "calibrations", "data", "%skV" % beam_energy)
+    datafile = "CL_%smm.mib" % camera_length
+    dp = merlintools.io.read_single_mib(datapath + "/" + datafile, [256,256])
+    if also_alpha_data:
+        alpha_file = glob.glob(datapath + "/*110.mib")[0]
+        alpha = merlintools.io.read_single_mib(alpha_file, [256,256])
+        return dp, alpha
+    else:
+        return dp
