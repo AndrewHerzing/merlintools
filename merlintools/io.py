@@ -16,7 +16,7 @@ import h5py
 import glob
 import pandas as pd
 from merlintools.utils import get_calibration
-from merlintools.processing import radial_profile
+from merlintools.processing import radial_profile, shift_align
 import fpd.fpd_file as fpdf
 import fpd.fpd_processing as fpdp
 
@@ -546,7 +546,9 @@ def create_dataset(h5file):
     mask = np.isnan(com_yx)
     com_yx[mask] = np.interp(np.flatnonzero(mask), np.flatnonzero(~mask), com_yx[~mask])
     min_center = np.percentile(com_yx, 50, (-2, -1))
-    shifts = -(com_yx - min_center[..., None, None])
+    radial_shifts = -(com_yx - min_center[..., None, None])
+    ali_shifts = (com_yx - min_center[..., None, None])
+    ali = shift_align(nt.fpd_data.data, ali_shifts, 32, 32, True, 3)
     profile = radial_profile(nt.fpd_data.data, com_yx, qcal)
     dataset = {'filename': h5file,
                'nt': nt,
@@ -555,10 +557,11 @@ def create_dataset(h5file):
                'qcal_units': 'A^-1',
                'com_yx' : com_yx,
                'min_center' : min_center,
-               'shifts' : shifts,
+               'shifts' : radial_shifts,
                'radial_profile' : profile,
                'apertures': None,
                'radii': None,
+               'aligned': ali,
                'images': {}}
     return dataset
 
