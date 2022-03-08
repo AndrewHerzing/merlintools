@@ -521,7 +521,7 @@ def fpd_check(data):
         else:
             return False
 
-def create_dataset(h5file):
+def create_dataset(h5file, full_align=False):
     """
     Read an FPD dataset and perform useful operations.
 
@@ -548,7 +548,14 @@ def create_dataset(h5file):
     min_center = np.percentile(com_yx, 50, (-2, -1))
     radial_shifts = -(com_yx - min_center[..., None, None])
     ali_shifts = (com_yx - min_center[..., None, None])
-    ali = shift_align(nt.fpd_data.data, ali_shifts, 32, 32, True, 3)
+    if full_align:
+        ali = shift_align(nt.fpd_data.data, ali_shifts, 32, 32, True, 3)
+        sum_im = ali.sum((2,3))
+        sum_dp = ali.sum((0,1))
+    else:
+        ali = None
+        sum_im = nt.fpd_sum_image.data
+        sum_dp = nt.fpd_sum_dif.data
     profile = radial_profile(nt.fpd_data.data, com_yx, qcal)
     dataset = {'filename': h5file,
                'nt': nt,
@@ -562,6 +569,8 @@ def create_dataset(h5file):
                'apertures': None,
                'radii': None,
                'aligned': ali,
+               'sum_image': sum_im,
+               'sum_dp': sum_dp,
                'images': {}}
     return dataset
 
