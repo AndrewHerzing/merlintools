@@ -640,6 +640,8 @@ def read_h5_results(h5file):
         dataset['radial_profile'] = [h5['radial_profile/x'][...], h5['radial_profile/y'][...]]
         dataset['radii'] = h5['radii'][...]
         dataset['apertures'] = h5['apertures'][...]
+        dataset['sum_image'] = h5['sum_image'][...],
+        dataset['sum_dp'] = h5['sum_dp'][...],
         dataset['images'] = {}
         for im in h5['images'].keys():
             dataset['images'][im] = h5['images'][im][...]
