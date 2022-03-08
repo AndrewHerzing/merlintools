@@ -580,7 +580,9 @@ def save_results(h5filename, dataset):
     """
     with h5py.File(h5filename, 'w') as h5:
         for k in dataset.keys():
-            if k == 'nt':
+            if dataset[k] is None:
+                h5.create_dataset(k, data=h5py.Empty(None))
+            elif k == 'nt':
                 pass
             elif k == 'params':
                 for item, value in dataset['params'].items():
@@ -593,8 +595,6 @@ def save_results(h5filename, dataset):
                 grp = h5.create_group('images')
                 for im in dataset['images'].keys():
                     grp.create_dataset(im, data=dataset['images'][im])
-            elif k == 'apertures' and type(dataset['apertures']) is np.ndarray:
-                h5.create_dataset('apertures', data=dataset['apertures'])
             else:
                 h5.create_dataset(k, data=dataset[k])
     return
