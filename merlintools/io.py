@@ -593,6 +593,15 @@ def save_results(h5filename, dataset):
                 grp = h5.create_group('images')
                 for im in dataset['images'].keys():
                     grp.create_dataset(im, data=dataset['images'][im])
+            elif k == 'apertures':
+                grp = h5.create_group('apertures')
+                if dataset['apertures']:
+                    for apt in dataset['apertures'].keys():
+                        grp.create_dataset(apt, data=dataset['apertures'][apt])
+            elif k == 'radii':
+                grp = h5.create_group('radii')
+                if dataset['radii']:
+                    pass
             else:
                 h5.create_dataset(k, data=dataset[k])
     return
