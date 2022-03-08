@@ -642,6 +642,7 @@ def read_h5_results(h5file):
         dataset['apertures'] = h5['apertures'][...]
         dataset['sum_image'] = h5['sum_image'][...],
         dataset['sum_dp'] = h5['sum_dp'][...],
+        dataset['aligned'] = h5['aligned'][...],
         dataset['images'] = {}
         for im in h5['images'].keys():
             dataset['images'][im] = h5['images'][im][...]
