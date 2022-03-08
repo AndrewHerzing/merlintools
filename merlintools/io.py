@@ -595,7 +595,7 @@ def save_results(h5filename, dataset):
                     grp.create_dataset(im, data=dataset['images'][im])
             elif k == 'apertures':
                 grp = h5.create_group('apertures')
-                if dataset['apertures']:
+                if type(dataset['apertures']) is np.ndarray:
                     for apt in dataset['apertures'].keys():
                         grp.create_dataset(apt, data=dataset['apertures'][apt])
             elif k == 'radii':
