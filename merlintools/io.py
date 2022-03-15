@@ -549,7 +549,7 @@ def create_dataset(h5file, full_align=False):
     radial_shifts = -(com_yx - min_center[..., None, None])
     ali_shifts = (com_yx - min_center[..., None, None])
     if full_align:
-        ali = shift_align(nt.fpd_data.data, ali_shifts, 32, 32, True, 3)
+        ali = shift_align(nt.fpd_data.data, ali_shifts, 32, 32, True, 3)[0]
         sum_im = ali.sum((2,3))
         sum_dp = ali.sum((0,1))
     else:
