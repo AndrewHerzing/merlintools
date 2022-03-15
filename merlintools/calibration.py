@@ -3,6 +3,7 @@ import py4DSTEM
 import matplotlib.pylab as plt
 import h5py
 import hyperspy.api as hs
+from merlintools.utils import get_lattice_spacings
 
 class CalibrationObject:
     """
@@ -363,7 +364,7 @@ class CalibrationObject:
         ax.plot(q,py4DSTEM.process.fit.gaussian(q,A,mu,sigma),color='r')
 
         ## Demonstrate consistency with known Au spacings
-        spacings_Ang = np.array([1.15, 1.21, 1.41, 2.0, 2.31])   # 222, 113, 022, 002, 111
+        spacings_Ang = np.array(list(get_lattice_spacings('AuPd').values()))
         spacings_inv_Ang = 1./spacings_Ang
 
         fig,ax = py4DSTEM.visualize.show_qprofile(q=q*inv_Ang_per_pixel,intensity=I_radial,
