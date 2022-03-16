@@ -4,6 +4,90 @@ import matplotlib.pylab as plt
 import h5py
 import hyperspy.api as hs
 from merlintools.utils import get_lattice_spacings
+from scipy.optimize import curve_fit
+from matplotlib.patches import Wedge
+
+class RingPatternCalibration:
+    
+    def __init__(self, data, material='AuPd'):
+        self.data = data
+        self.hkls = get_lattice_spacings(material)
+    
+    def find_center(self, plot_result=False):
+        apt = fpdp.virtual_apertures(self.data.shape, (128,128), (0,50))
+        self.comyx = fpdp.center_of_mass(self.data[np.newaxis,np.newaxis,:,:], aperture=apt,
+                                         nr=16, nc=16, print_stats=False)[:,0,0]
+        if plot_result:
+            plt.figure()
+            plt.imshow(np.log(self.data+1), cmap='inferno')
+            plt.gca().scatter(self.comyx[1], self.comyx[0])
+
+    def get_qrange(self, radii, ylim=None, xlim=None):
+        self.q_range = radii
+        fig, ax = plt.subplots(1,2, figsize=(9,5),
+                               gridspec_kw={'width_ratios': [1, 2]})
+        
+        ax[0].imshow(np.log(self.data+1), cmap='gray')
+        annulus = Wedge((self.comyx[1], self.comyx[0]),
+                        radii[1], 0, 360, width=(radii[1]-radii[0]),
+                        alpha=0.3, color='red')
+        ax[0].add_patch(annulus)
+        ax[0].axis('off')
+        
+        ax[1].scatter(self.radial[0], self.radial[1])
+        if ylim is None:
+            pass
+        else:
+            ax[1].set_ylim(ylim[0], ylim[1])
+        if xlim is None:
+            pass
+        else:
+            ax[1].set_xlim(xlim[0], xlim[1])
+        ax[1].axvline(self.q_range[0], linestyle='--', color='red')
+        ax[1].axvline(self.q_range[1], linestyle='--', color='red')
+        plt.tight_layout()
+    
+    def radial_profile(self, spf=3):
+        self.radial = fpdp.radial_profile(self.data, cyx=self.comyx, spf=spf)
+    
+    def fit_peak(self, peak_hkl, plot_result=False): 
+        def _gaussian(x, A, mu, sigma):
+            return A*np.exp(-0.5*((x-mu)/sigma)**2)
+        
+        idx = np.where(np.logical_and(self.radial[0]>=self.q_range[0],
+                                      self.radial[0]<self.q_range[1]))
+        _x = self.radial[0][idx]
+        _y = self.radial[1][idx]
+        _y = self.radial[1][idx]/np.max(self.radial[1][idx])
+
+        p0 = [np.max(_y), _x[np.where(_y==np.max(_y))][0], 1.]
+
+        popt,pcov = curve_fit(_gaussian,_x,_y,p0=p0)
+        self.A,self.mu,self.sigma = np.max(self.radial[1][idx])*popt[0],popt[1],popt[2]
+        
+        self.calibration = (1/self.hkls[peak_hkl])/self.mu
+        if plot_result:
+            fig,ax = plt.subplots(1)
+            ax.scatter(self.radial[0], self.radial[1])
+            ax.set_ylim(0,600)
+            ax.set_xlim(0,140)
+            ax.axvline(self.mu, linestyle='--', color='red')
+    
+    def check_results(self, ylim=None, xlim=None):
+        fig,ax = plt.subplots(1)
+        ax.scatter(self.radial[0], self.radial[1])
+        if ylim is None:
+            pass
+        else:
+            ax.set_ylim(ylim[0], ylim[1])
+        if xlim is None:
+            pass
+        else:
+            ax.set_xlim(xlim[0], xlim[1])
+
+        for i in self.hkls.keys():
+            k = 1/self.hkls[i]
+            ax.axvline(k/self.calibration, linestyle='--', color='red')
 
 class CalibrationObject:
     """
