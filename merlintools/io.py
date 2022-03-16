@@ -554,7 +554,7 @@ def create_dataset(h5file, full_align=False):
         sum_dp = ali.sum((0,1))
     else:
         ali = None
-        sum_im = nt.fpd_sum_image.data
+        sum_im = nt.fpd_sum_im.data
         sum_dp = nt.fpd_sum_dif.data
     profile = radial_profile(nt.fpd_data.data, com_yx, qcal)
     dataset = {'filename': h5file,
