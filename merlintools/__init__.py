@@ -8,4 +8,4 @@ init file for MerlinTools package.
 @author: Andrew Herzing
 """
 
-from . import io, preprocessing, processing, utils, plot  # noqa: F401
+from . import io, preprocessing, processing, utils, plot, calibration  # noqa: F401
