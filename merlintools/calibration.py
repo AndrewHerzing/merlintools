@@ -6,6 +6,7 @@ import hyperspy.api as hs
 from merlintools.utils import get_lattice_spacings
 from scipy.optimize import curve_fit
 from matplotlib.patches import Wedge
+import fpd.fpd_processing as fpdp
 
 class RingPatternCalibration:
     
