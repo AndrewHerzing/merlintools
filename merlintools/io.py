@@ -549,7 +549,7 @@ def create_dataset(h5file, full_align=False):
     radial_shifts = -(com_yx - min_center[..., None, None])
     ali_shifts = (com_yx - min_center[..., None, None])
     if full_align:
-        ali = shift_align(nt.fpd_data.data, ali_shifts, 32, 32, True, 3)[0]
+        ali = shift_align(nt.fpd_data.data, ali_shifts, 32, 32, True, 3)
         sum_im = ali.sum((2,3))
         sum_dp = ali.sum((0,1))
     else:
@@ -641,8 +641,11 @@ def read_h5_results(h5file):
         dataset['radii'] = h5['radii'][...]
         dataset['apertures'] = h5['apertures'][...]
         dataset['sum_image'] = h5['sum_image'][...],
+        dataset['sum_image'] = dataset['sum_image'][0]
         dataset['sum_dp'] = h5['sum_dp'][...],
+        dataset['sum_dp'] = dataset['sum_dp'][0],
         dataset['aligned'] = h5['aligned'][...],
+        dataset['aligned'] = dataset['aligned'][0]
         dataset['images'] = {}
         for im in h5['images'].keys():
             dataset['images'][im] = h5['images'][im][...]
