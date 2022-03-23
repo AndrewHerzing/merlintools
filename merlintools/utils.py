@@ -15,6 +15,7 @@ import json
 import os
 import merlintools
 import glob
+import py4DSTEM
 
 merlintools_path = os.path.dirname(merlintools.__file__)
 
@@ -398,3 +399,52 @@ def load_calibration_file(beam_energy, camera_length, also_alpha_data=False):
         return dp, alpha
     else:
         return dp
+
+def get_2d_scattering_profile(Z, composition, q_range=[0,2], q_size=256, plot_result=False, figsize=(9,4)):
+    """
+    Calculate a 2D scattering profile.
+
+    Args
+    ----------
+    Z : list or int
+        Atomic number of elements to include
+    composition : list or int
+        Atomic composition for each element in Z
+    q_range : tuple
+        Minimum and maximum q value to include
+    q_size : int
+        Size of calculated profile
+    plot_result : bool
+        If True, plot the 1D and 2D scattering profiles
+    figsize : tuple
+        Size of figure if result is to be plotted
+
+    """
+    def _interpolation_function(d,y,n):
+        x = np.arange(n) 
+        f = interp1d(x, y)
+        return f(d.flat).reshape(d.shape)
+    
+    if type(Z) is not list:
+        Z = [Z]
+    if type(composition) is not list:
+        composition = [composition]
+
+    q = np.linspace(q_range[0], q_range[1], q_size)
+
+    atom_sf = py4DSTEM.process.utils.single_atom_scatter(Z, composition, q, 'A')
+    atom_sf.get_scattering_factor(Z, composition, q, 'A')
+
+    x,y = np.meshgrid(range(q_size), range(q_size))
+    d = np.sqrt((x - (n / 2) + 1)**2 + (y - (n / 2) + 1)**2)
+    sp = _interpolation_function(d, atom_sf.fe, n)
+    
+    if plot_result:
+        fig,ax = plt.subplots(1,2,figsize=figsize)
+        ax[0].plot(q, atom_sf.fe, 'r-')
+        ax[0].set_xlabel('Scattering Vector [1/Angstrom]', size=12)
+        ax[0].set_ylabel('Single Atom Scattering', size=12)
+        ax[0].set_xlim([0, 2]);
+        ax[1].imshow(sp, cmap='inferno')
+        plt.tight_layout()
+    return sp
