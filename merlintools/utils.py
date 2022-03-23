@@ -436,8 +436,8 @@ def get_2d_scattering_profile(Z, composition, q_range=[0,2], q_size=256, plot_re
     atom_sf.get_scattering_factor(Z, composition, q, 'A')
 
     x,y = np.meshgrid(range(q_size), range(q_size))
-    d = np.sqrt((x - (n / 2) + 1)**2 + (y - (n / 2) + 1)**2)
-    sp = _interpolation_function(d, atom_sf.fe, n)
+    d = np.sqrt((x - (q_size / 2) + 1)**2 + (y - (q_size / 2) + 1)**2)
+    sp = _interpolation_function(d, atom_sf.fe, q_size)
     
     if plot_result:
         fig,ax = plt.subplots(1,2,figsize=figsize)
