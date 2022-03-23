@@ -16,6 +16,8 @@ import os
 import merlintools
 import glob
 import py4DSTEM
+from scipy.interpolate import interp1d
+import matplotlib.pylab as plt
 
 merlintools_path = os.path.dirname(merlintools.__file__)
 
