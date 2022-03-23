@@ -367,6 +367,33 @@ def get_virtual_images(data4d, com_yx, apertures, sub_pixel=True, nr=128, nc=128
 
 def plot_q_windows(data, q_vals, log_scale=True, colors=None, alpha=0.5, center_lines=False,
                    legend=False, figsize=(8,6)):
+    """
+    Display plot of data and q windows.
+
+    Args
+    ----------
+    data : NumPy array
+        4D-STEM dataset
+    q_vals : list
+        List of tuples defining q range for each window
+    log_scale : bool
+        If True, display plot on a semi-log scale.
+    colors : list
+        Colors to use for plot
+    alpha : float
+        Alpha level for windows
+    center_lines : bool
+        If True, display dashed lines at center of windows
+    legend : bool
+        If True, add legend to plot
+    figsize : tuple
+        Size of figure to display
+
+    Returns
+    ----------
+    fig : Matplotlib Figure
+        Handle for plot
+    """
     if colors is None:
         colors = ['blue','green','purple','magenta','cyan']
     if type(q_vals) is not list:
@@ -414,6 +441,21 @@ def plot_q_windows(data, q_vals, log_scale=True, colors=None, alpha=0.5, center_
     return fig
 
 def get_q_images(data, q_vals):
+    """
+    Extract images from various q ranges.
+
+    Args
+    ----------
+    data : NumPy array
+        4D-STEM dataset
+    q_vals : list
+        List of tuples defining q range for each window
+
+    Returns
+    ----------
+    ims : NumPy array
+        Extracted images
+    """
     if type(q_vals) is not list:
         q_vals = [q_vals]
     ims = np.array(np.zeros([len(q_vals), data['sum_image'].shape[0], data['sum_image'].shape[1]]))
@@ -423,9 +465,35 @@ def get_q_images(data, q_vals):
         ims[i] = data['radial_profile'][1][:,:,idx].sum(2)
     return ims
 
-from scipy import optimize
-
 def remove_bckg(radial, q_range, scanYX=None, plot_result=False, model='power'):
+    """
+    Remove background from 4D-STEM dataset using a power law model.
+
+    Args
+    ----------
+    radial : NumPy array
+        Radially averaged or integrated 4D-STEM dataset
+    q_range : list
+        Range for background fit
+    scanYX : None or tuple
+        Scan position at which to perform fitting.  If None, fitting is performed
+        on the sum profile.
+    plot_result : bool
+        If True, plot the profile and fitting result
+    model : string
+        Model to use for background fitting.
+
+    Returns
+    ----------
+    corrected : NumPy array
+        Background subtracted radial profile
+
+    Examples
+    --------
+    >>> import merlintools as merlin
+    >>> data = merlin.io.read_h5_results("./merlin_data.hdf5")
+    >>> corrected = merlin.processing.remove_bckg(data['radial_profile'], [0.5,1.3])
+    """
     def _pl_func(x, A, r):
         return A*x**-r
     
