@@ -13,7 +13,7 @@ import hyperspy.api as hs
 import numpy as np
 import fpd.fpd_processing as fpdp
 import fpd.fpd_file as fpdf
-from scipy import ndimage
+from scipy import ndimage, optimize
 import matplotlib.pylab as plt
 from merlintools import color
 from matplotlib import patches
@@ -365,13 +365,14 @@ def get_virtual_images(data4d, com_yx, apertures, sub_pixel=True, nr=128, nc=128
     v_images = v_images.reshape([n_apts, detY, detX, scanY, scanX]).sum((1,2))
     return v_images
 
-def plot_q_windows(data, q_vals, log_scale=True, colors=None, alpha=0.5):
+def plot_q_windows(data, q_vals, log_scale=True, colors=None, alpha=0.5, center_lines=False,
+                   legend=False, figsize=(8,6)):
     if colors is None:
         colors = ['blue','green','purple','magenta','cyan']
     if type(q_vals) is not list:
         q_vals = [q_vals]
     
-    fig, ax = plt.subplots(1)
+    fig, ax = plt.subplots(1, figsize=figsize)
     if log_scale:
         ax.semilogy(data['radial_profile'][0], data['radial_profile'][1].sum((0,1)),'ro')
     else:
@@ -379,9 +380,37 @@ def plot_q_windows(data, q_vals, log_scale=True, colors=None, alpha=0.5):
 
     ylim = ax.get_ylim()
     
+    rois = [None]*len(q_vals)
+    q_mid = [None]*len(q_vals)
     for i in range(len(q_vals)):
-        roi = patches.Rectangle((q_vals[i][0],ylim[0]), width=q_vals[i][1] - q_vals[i][0], height=ylim[1]-ylim[0], alpha=0.5, color=colors[i])
-        ax.add_patch(roi)
+        q_mid[i] = (q_vals[i][1] + q_vals[i][0])/2
+        if q_vals[i][0] > 0.0:
+            if data['qcal_units'] == 'A^-1':
+                patch_label = r'%.2f $\AA^{-1}$' % q_mid[i]
+            elif data['qcal_units'] == 'nm^-1':
+                patch_label = r'%.2f $nm^{-1}$' % q_mid[i]
+            else:
+                patch_label = r'%.2f $pixels^{-1}$' % q_mid[i]
+        else:
+            patch_label = "BF"            
+        rois[i] = patches.Rectangle((q_vals[i][0],ylim[0]), width=q_vals[i][1] - q_vals[i][0],
+                                    height=ylim[1]-ylim[0], alpha=alpha, color=colors[i],
+                                    label=patch_label)
+        ax.add_patch(rois[i])
+    if center_lines:
+        for i in range(len(q_vals)):
+            if q_vals[i][0] > 0.0:
+                ax.axvline(q_mid[i], color='black', linestyle='--')
+    if legend:
+        ax.legend(handles=[i for i in rois], loc='best')
+    ax.set_ylabel('log Radially Averaged Intensity (counts)')
+    if data['qcal_units'] == 'A^-1':
+        ax.set_xlabel(r'q ($\AA^{-1}$)')
+    elif data['qcal_units'] == 'nm^-1':
+        ax.set_xlabel(r'q ($nm^{-1}$)')
+    else:
+        ax.set_xlabel(r'$pixels^{-1}$')
+    
     return fig
 
 def get_q_images(data, q_vals):
@@ -393,3 +422,36 @@ def get_q_images(data, q_vals):
         idx = np.where(np.logical_and(data['radial_profile'][0] > q_vals[i][0], data['radial_profile'][0] < q_vals[i][1]))[0]
         ims[i] = data['radial_profile'][1][:,:,idx].sum(2)
     return ims
+
+from scipy import optimize
+
+def remove_bckg(radial, q_range, scanYX=None, plot_result=False, model='power'):
+    def _pl_func(x, A, r):
+        return A*x**-r
+    
+    def _poly_func(x, a4, a3, a2, a1, c):
+        return a4*x**4 + a3*x**3 + a2*x**2 + a1*x + c
+    
+    xaxis = data['radial_profile'][0]
+    if scanYX is None:
+        yaxis = data['radial_profile'][1].sum((0,1))
+    else:
+        yaxis = data['radial_profile'][1][scanYX[0], scanYX[1], :]
+    fit_range=[np.where(xaxis > q_range[0])[0][0], np.where(xaxis>q_range[1])[0][0]]
+    if model.lower() in ['power','pl']:
+        res, cov = optimize.curve_fit(_pl_func, xaxis[fit_range[0]:fit_range[1]], yaxis[fit_range[0]:fit_range[1]])
+        fit = _pl_func(xaxis[fit_range[0]:], res[0], res[1])
+    elif model.lower() in ['poly',]:
+        res, cov = optimize.curve_fit(_poly_func, xaxis[fit_range[0]:fit_range[1]], yaxis[fit_range[0]:fit_range[1]])
+        fit = _poly_func(xaxis[fit_range[0]:], res[0], res[1], res[2], res[3], res[4])
+    
+    corrected = yaxis[fit_range[0]:] - fit
+    
+    if plot_result:
+        plt.figure()
+        plt.plot(xaxis[fit_range[0]:], yaxis[fit_range[0]:], 'ro', label='Data')
+        plt.plot(xaxis[fit_range[0]:], fit, 'blue', label='Fit')
+        plt.plot(xaxis[fit_range[0]:], corrected, 'go', label='Corrected')
+        plt.legend()
+    
+    return corrected
