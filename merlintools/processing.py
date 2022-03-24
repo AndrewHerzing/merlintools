@@ -465,13 +465,13 @@ def get_q_images(data, q_vals):
         ims[i] = data['radial_profile'][1][:,:,idx].sum(2)
     return ims
 
-def remove_bckg(radial, q_range, scanYX=None, plot_result=False, model='power'):
+def remove_bckg(data, q_range, scanYX=None, plot_result=False, model='power'):
     """
     Remove background from 4D-STEM dataset using a power law model.
 
     Args
     ----------
-    radial : NumPy array
+    data : NumPy array
         Radially averaged or integrated 4D-STEM dataset
     q_range : list
         Range for background fit
