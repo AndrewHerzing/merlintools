@@ -26,7 +26,7 @@ Installation
     $ pip install py4dstem
 
     ```
-  * Next, install FPD via pip:
+  * Next, install FPD from the GitLab repo (https://gitlab.com/fpdpy/fpd) via pip:
     ```bash
     $ pip install fpd
     ```
