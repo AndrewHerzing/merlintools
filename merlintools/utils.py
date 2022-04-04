@@ -79,7 +79,7 @@ def mrads_to_hkl(angle, voltage):
     d : float
         Lattice spacing in nanometers
     """
-    wavelength = voltage_to_wavelength(300, True)
+    wavelength = voltage_to_wavelength(voltage, True)
     d = wavelength / (2 * np.sin(angle / 1000))
     return d
 
