@@ -677,6 +677,6 @@ def read_single_mib(filename, det_shape=[256,256]):
 
     with open(filename, 'rb') as h:
         _ = np.fromfile(h, np.int8, header_length)
-        dp = np.fromfile(h, np.uint16)
+        dp = np.fromfile(h, dtype=data_type)
     dp = dp.reshape(det_shape)
     return dp
