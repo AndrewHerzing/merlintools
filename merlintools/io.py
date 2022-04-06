@@ -521,7 +521,7 @@ def fpd_check(data):
         else:
             return False
 
-def create_dataset(h5file, full_align=False):
+def create_dataset(h5file, full_align=False, check_file=True):
     """
     Read an FPD dataset and perform useful operations.
 
@@ -539,8 +539,13 @@ def create_dataset(h5file, full_align=False):
 
     """
     params = get_microscope_parameters(h5file)
-    qcal = get_calibration(params['HT'],params['CL'],'q')
-    nt = fpdf.fpd_to_tuple(h5file)
+    if params['HT'] == 'Unknown':
+        qcal = 1
+        qcal_units = 'pixels'
+    else:
+       qcal = get_calibration(params['HT'],params['CL'],'q')
+       qcal_units = 'A^-1'
+    nt = fpdf.fpd_to_tuple(h5file, fpd_check=check_file)
     com_yx = fpdp.center_of_mass(nt.fpd_data.data, 32, 32, print_stats=False)
     # Remove NaN's from com_yx and replace with nearest non-NaN value
     mask = np.isnan(com_yx)
@@ -561,7 +566,7 @@ def create_dataset(h5file, full_align=False):
                'nt': nt,
                'params': params,
                'qcal': qcal,
-               'qcal_units': 'A^-1',
+               'qcal_units': qcal_units,
                'com_yx' : com_yx,
                'min_center' : min_center,
                'shifts' : radial_shifts,
