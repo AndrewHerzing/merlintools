@@ -18,6 +18,7 @@ import glob
 import py4DSTEM
 from scipy.interpolate import interp1d
 import matplotlib.pylab as plt
+import fpd.fpd_file as fpdf
 
 merlintools_path = os.path.dirname(merlintools.__file__)
 
@@ -450,3 +451,8 @@ def get_2d_scattering_profile(Z, composition, q_range=[0,2], q_size=256, plot_re
         ax[1].imshow(sp, cmap='inferno')
         plt.tight_layout()
     return sp
+
+def get_simulated_data():
+    datafile = os.path.join(merlintools_path, "tests", "test_data", "SimulatedData.hdf5")
+    data = fpdf.fpd_to_tuple(datafile, fpd_check=False)
+    return data
