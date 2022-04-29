@@ -187,7 +187,7 @@ class CalibrationObject:
 
         self.qx0_meas, self.qy0_meas = py4DSTEM.process.calibration.get_origin(self.datacube)
         if plot_results:
-            py4DSTEM.visualize.show_image_grid(get_ar=lambda i:[self.qx0_meas,sefl.qy0_meas][i],H=1,W=2,cmap='RdBu')
+            py4DSTEM.visualize.show_image_grid(get_ar=lambda i:[self.qx0_meas,self.qy0_meas][i],H=1,W=2,cmap='RdBu')
 
     def fit_q(self, plot_results=False):
         """
