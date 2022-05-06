@@ -60,9 +60,11 @@ def get_lattice_spacings(material):
         hkls = {'111': 3.14, '200': 2.72, '220': 1.92,
                 '311': 1.64, '222': 1.57}
         return hkls
+    elif material.lower() == 'asbestos':
+        hkls = {'020': 8.98, '011': 4.87}
     else:
         raise(ValueError, "Unknown material.  Must be 'Au-Pd', 'Au', or 'Si'")
-
+    return hkls
 
 def mrads_to_hkl(angle, voltage):
     """

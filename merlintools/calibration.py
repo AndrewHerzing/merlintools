@@ -14,8 +14,8 @@ class RingPatternCalibration:
         self.data = data
         self.hkls = get_lattice_spacings(material)
     
-    def find_center(self, plot_result=False):
-        apt = fpdp.virtual_apertures(self.data.shape, (128,128), (0,50))
+    def find_center(self, mask_radius=50, plot_result=False):
+        apt = fpdp.virtual_apertures(self.data.shape, (128,128), (0,mask_radius))
         self.comyx = fpdp.center_of_mass(self.data[np.newaxis,np.newaxis,:,:], aperture=apt,
                                          nr=16, nc=16, print_stats=False)[:,0,0]
         if plot_result:
