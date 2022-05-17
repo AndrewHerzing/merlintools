@@ -632,7 +632,7 @@ def read_h5_results(h5file):
     """
     dataset = {}
     with h5py.File(h5file,'r') as h5:
-        dataset['filename'] = h5['filename'][()].decode()
+        dataset['filename'] = h5['filename'][()]
         dataset['nt'] = fpdf.fpd_to_tuple(dataset['filename'])
         dataset['params'] = {'CL': np.float32(h5['params/CL'][...]),
                           'HT': np.float32(h5['params/HT'][...]),
