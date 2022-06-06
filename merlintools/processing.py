@@ -298,13 +298,14 @@ def get_max_dps(data_4d, image, n_pix=100):
     """
     dps = np.zeros([n_pix, data_4d.shape[2], data_4d.shape[3]])
     max_locs = image.ravel().argsort()[::-1]
-
+    locs = [None]*n_pix
     for i in range(0, n_pix):
         row, col = np.unravel_index(max_locs[i], data_4d.shape[0:2])
+        locs[i] = [row, col]
         dps[i] = data_4d[row, col, :, :]
 
     dps = hs.signals.Signal2D(dps)
-    return dps
+    return dps, locs
 
 def get_virtual_images(data4d, com_yx, apertures, sub_pixel=True, nr=128, nc=128):
     """
