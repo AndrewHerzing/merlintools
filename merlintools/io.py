@@ -320,6 +320,9 @@ def get_merlin_parameters(data):
             scanY, scanX, detY, detX = h5["fpd_expt/fpd_data/data"].shape
             exposures = np.round(h5["fpd_expt/Exposure/data"][...] / 1e6, 1)
             frame_times, counts = np.unique(exposures, return_counts=True)
+            positive_idx = np.where(frame_times>=0)
+            frame_times = frame_times[positive_idx]
+            counts = counts[positive_idx]
             frame_time = frame_times[counts.argmax()]
             thresholds = h5["fpd_expt/Threshold/data"][...][:, :, 0]
             threshold = np.unique(thresholds[~np.isnan(thresholds)])[0]
