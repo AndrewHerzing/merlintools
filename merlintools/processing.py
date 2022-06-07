@@ -365,7 +365,7 @@ def get_virtual_images(data4d, com_yx, apertures, sub_pixel=True, nr=128, nc=128
     v_images = v_images.reshape([n_apts, detY, detX, scanY, scanX]).sum((1,2))
     return v_images
 
-def get_q_images(data, q_vals):
+def get_q_images(data, q_ranges):
     """
     Extract images from various q ranges.
 
@@ -381,12 +381,12 @@ def get_q_images(data, q_vals):
     ims : NumPy array
         Extracted images
     """
-    if type(q_vals) is not list:
-        q_vals = [q_vals]
-    ims = np.array(np.zeros([len(q_vals), data['sum_image'].shape[0], data['sum_image'].shape[1]]))
+    if type(q_ranges) is not list:
+        q_ranges = [q_ranges]
+    ims = np.array(np.zeros([len(q_ranges), data['sum_image'].shape[0], data['sum_image'].shape[1]]))
     
-    for i in range(0, len(q_vals)):
-        idx = np.where(np.logical_and(data['radial_profile'][0] > q_vals[i][0], data['radial_profile'][0] < q_vals[i][1]))[0]
+    for i in range(0, len(q_ranges)):
+        idx = np.where(np.logical_and(data['radial_profile'][0] > q_ranges[i][0], data['radial_profile'][0] < q_ranges[i][1]))[0]
         ims[i] = data['radial_profile'][1][:,:,idx].sum(2)
     return ims
 

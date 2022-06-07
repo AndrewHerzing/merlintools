@@ -131,3 +131,31 @@ def plot_q_windows(data, q_ranges, log_scale=True, colors=None, alpha=0.5, cente
         ax.set_xlabel(r'$pixels^{-1}$')
     
     return fig
+
+def plot_q_images(data, crop=True, labels=None, figsize=None):
+    nimages = len(data['images'])
+    if labels is None:
+        labels = [None]*nimages
+        for i in range(0, len(labels)):
+            if data['q_vals'][i] == 0.0:
+                labels[i] = 'BF'
+            else:
+                labels[i] = ('q=%.2f A^-1' % data['q_vals'][i])
+    if figsize is None:
+        figsize = (5*nimages, 5)
+    fig,ax = plt.subplots(1, nimages, figsize=figsize)
+    for i in range(0, nimages):
+         if crop:
+            ax[i].imshow(data['images'][i][:-1,1:], cmap='inferno')
+         else:
+             ax[i].imshow(data['images'][i], cmap='inferno')
+         ax[i].set_title(labels[i])
+    [i.axis('off') for i in ax.reshape(-1)]
+    _ = plt.suptitle('%s ; FOV: %.0f nm' % (data['data']['filename'].split('/')[-2],
+                                            float(data['data']['nt'].DM0[2].data[-1] * 1000)))
+    plt.tight_layout()
+    return fig, ax
+
+def adjust_clim(figure, axis_number, clim):
+    figure.axes[axis_number].get_images()[0].set_clim(clim)
+    return
