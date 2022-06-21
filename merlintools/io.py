@@ -356,6 +356,7 @@ def get_microscope_parameters(data, display=False):
     """
     if isinstance(data, h5py.File):
         if "DM0" in data["/fpd_expt/"].keys():
+            logger.info("Found microscope parameters in DM metadata in FPD file")
             cl = float(data["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
                             "Microscope Info/STEM Camera Length"][...])
             ht = float(data["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
@@ -363,28 +364,36 @@ def get_microscope_parameters(data, display=False):
             mag = float(data["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
                              "Microscope Info/Indicated Magnification"][...])
         else:
+            logger.info("Unable to find microscope parameters in FPD file")
             cl = "Unknown"
             ht = "Unknown"
             mag = "Unknown"
     elif isinstance(data, str):
-        if os.path.splitext(data)[-1].lower() == 'hdf5':
+        if os.path.splitext(data)[-1].lower() == '.hdf5':
             with h5py.File(data, 'r') as h5:
-                if "DM0" in h5["/fpd_expt/"].keys():
+                h5keys = h5["/fpd_expt/"].keys()
+            h5_has_dm = "DM0" in h5keys
+            if h5_has_dm:
+                with h5py.File(data, 'r') as h5:
                     cl = float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
                                 "Microscope Info/STEM Camera Length"][...])
                     ht = float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
                                 "Microscope Info/Voltage"][...]) / 1000
                     mag = float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
                                 "Microscope Info/Indicated Magnification"][...])
-                else:
-                    cl = "Unknown"
-                    ht = "Unknown"
-                    mag = "Unknown"
-        elif os.path.splitext(data)[-1].lower() in ['emi']:
-            im = load(data)
-            cl = im.metadata.Acquisition_instrument.TEM.camera_length
-            ht = im.metadata.Acquisition_instrument.TEM.beam_energy
-            mag = im.metadata.Acquisition_instrument.TEM.magnification
+                    logger.info("Found DM metadata in FPD file")
+            elif len(glob.glob(os.path.split(data)[0] + '/*.emi')) > 0:
+                emifile = glob.glob(os.path.split(data)[0] + '/*.emi')[0]
+                im = load(emifile)
+                cl = im.metadata.Acquisition_instrument.TEM.camera_length
+                ht = im.metadata.Acquisition_instrument.TEM.beam_energy
+                mag = im.metadata.Acquisition_instrument.TEM.magnification
+                logger.info("Found microscope params in EMI file")
+            else:
+                logger.info("Unable to find microscope parameters in FPD file")
+                cl = "Unknown"
+                ht = "Unknown"
+                mag = "Unknown"
     else:
         if "DM0" in data._fields():
             cl = float(data.DM0.tags["ImageList/TagGroup0/ImageTags/"
@@ -393,7 +402,9 @@ def get_microscope_parameters(data, display=False):
                                      "Microscope Info/Voltage"][...]) / 1000
             mag = float(data.DM0.tags["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
                                       "Microscope Info/Indicated Magnification"][...])
+            logger.info("Found microscope parameters in DM metadata of FPD file")
         else:
+            logger.info("Unable to find microscope parameters in FPD file")
             cl = "Unknown"
             ht = "Unknown"
             mag = "Unknown"
