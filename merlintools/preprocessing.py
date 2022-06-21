@@ -114,19 +114,20 @@ def merlin_to_fpd(rootpath=None, savepath=None, keep_unshaped=False,
     for i in range(0, len(dirs)):
         mibfiles = glob.glob(dirs[i] + "/*.mib")
         hdrfile = glob.glob(dirs[i] + "/*.hdr")[0]
-        dmfile = glob.glob(dirs[i] + "/*.dm*")[0]
-        tiafile = glob.glob(dirs[i] + "/*.emi")[0]
+        dmfile = glob.glob(dirs[i] + "/*.dm*")
+        tiafile = glob.glob(dirs[i] + "/*.emi")
 
         logger.info("Merlin Data File: %s" % mibfiles[0])
         logger.info("Merlin Header File: %s" % hdrfile)
         logger.info("Saving to path: %s" % outpaths[i])
 
         if len(dmfile) > 0:
-            logger.info("Found DM file: %s" % dmfile)
+            logger.info("Found DM file: %s" % dmfile[0])
             save_dm = True
             scanX, scanY, skip_frames, total_frames = get_scan_shape(mibfiles)
         elif len(tiafile) > 0:
-            logger.info("Found TIA file: %s" % tiafile)
+            logger.info("Found TIA file: %s" % tiafile[0])
+            save_dm = False
             im = load(tiafile)
             scanX, scanY = [(ax.axis, ax.name, ax.units) for ax in im.axes_manager.signal_axes]
             skip_frames = 0
@@ -153,7 +154,7 @@ def merlin_to_fpd(rootpath=None, savepath=None, keep_unshaped=False,
                                           hdrfn=hdrfile,
                                           ds_start_skip=skip_frames,
                                           row_end_skip=0,
-                                          dmfns=dmfile,
+                                          dmfns=dmfile[0],
                                           sort_binary_file_list=False,
                                           strict=False,
                                           repack=True)
