@@ -19,6 +19,7 @@ from merlintools.utils import get_calibration
 from merlintools.processing import radial_profile, shift_align
 import fpd.fpd_file as fpdf
 import fpd.fpd_processing as fpdp
+from hyperspy.io import load
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -366,18 +367,24 @@ def get_microscope_parameters(data, display=False):
             ht = "Unknown"
             mag = "Unknown"
     elif isinstance(data, str):
-        with h5py.File(data, 'r') as h5:
-            if "DM0" in h5["/fpd_expt/"].keys():
-                cl = float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
-                              "Microscope Info/STEM Camera Length"][...])
-                ht = float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
-                              "Microscope Info/Voltage"][...]) / 1000
-                mag = float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
-                               "Microscope Info/Indicated Magnification"][...])
-            else:
-                cl = "Unknown"
-                ht = "Unknown"
-                mag = "Unknown"
+        if os.path.splitext(data)[-1].lower() == 'hdf5':
+            with h5py.File(data, 'r') as h5:
+                if "DM0" in h5["/fpd_expt/"].keys():
+                    cl = float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
+                                "Microscope Info/STEM Camera Length"][...])
+                    ht = float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
+                                "Microscope Info/Voltage"][...]) / 1000
+                    mag = float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
+                                "Microscope Info/Indicated Magnification"][...])
+                else:
+                    cl = "Unknown"
+                    ht = "Unknown"
+                    mag = "Unknown"
+        elif os.path.splitext(data)[-1].lower() in ['emi']:
+            im = load(data)
+            cl = im.metadata.Acquisition_instrument.TEM.camera_length
+            ht = im.metadata.Acquisition_instrument.TEM.beam_energy
+            mag = im.metadata.Acquisition_instrument.TEM.magnification
     else:
         if "DM0" in data._fields():
             cl = float(data.DM0.tags["ImageList/TagGroup0/ImageTags/"
