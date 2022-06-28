@@ -385,6 +385,8 @@ def get_microscope_parameters(data, display=False):
             elif len(glob.glob(os.path.split(data)[0] + '/*.emi')) > 0:
                 emifile = glob.glob(os.path.split(data)[0] + '/*.emi')[0]
                 im = load(emifile)
+                if type(im) is list:
+                    im = im[0]
                 cl = im.metadata.Acquisition_instrument.TEM.camera_length
                 ht = im.metadata.Acquisition_instrument.TEM.beam_energy
                 mag = im.metadata.Acquisition_instrument.TEM.magnification
