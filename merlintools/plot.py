@@ -151,8 +151,9 @@ def plot_q_images(data, crop=True, labels=None, figsize=None):
              ax[i].imshow(data['images'][i], cmap='inferno')
          ax[i].set_title(labels[i])
     [i.axis('off') for i in ax.reshape(-1)]
-    _ = plt.suptitle('%s ; FOV: %.0f nm' % (data['data']['filename'].split('/')[-2],
-                                            float(data['data']['nt'].DM0[2].data[-1] * 1000)))
+    if 'DM0' in data['data']['nt']._fields:
+        _ = plt.suptitle('%s ; FOV: %.0f nm' % (data['data']['filename'].split('/')[-2],
+                                                float(data['data']['nt'].DM0[2].data[-1] * 1000)))
     plt.tight_layout()
     return fig, ax
 
