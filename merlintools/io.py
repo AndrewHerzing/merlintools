@@ -372,7 +372,8 @@ def get_microscope_parameters(data, display=False):
         if os.path.splitext(data)[-1].lower() == '.hdf5':
             with h5py.File(data, 'r') as h5:
                 h5keys = h5["/fpd_expt/"].keys()
-            h5_has_dm = "DM0" in h5keys
+                
+                h5_has_dm = "DM0" in h5keys
             if h5_has_dm:
                 with h5py.File(data, 'r') as h5:
                     cl = float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
