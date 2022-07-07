@@ -11,7 +11,7 @@ preprocessing module for MerlinTools package.
 import os
 import glob
 import logging
-import fpd
+import fpd.fpd_file as fpdf
 from merlintools.io import get_scan_shape
 import tkinter as tk
 from tkinter import filedialog
@@ -19,14 +19,15 @@ import time
 import shutil
 from pathlib import Path
 from hyperspy.io import load
+import h5py
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def merlin_to_fpd(rootpath=None, savepath=None, keep_unshaped=False,
-                  shutdown=False, discard_first_column=False,
-                  discard_data=False):
+def merlin_to_fpd_legacy(rootpath=None, savepath=None, keep_unshaped=False,
+                         shutdown=False, discard_first_column=False,
+                         discard_data=False):
     """
     Convert Merlin files to FPD HDF5 archive and transfer to a storage location.
 
@@ -137,27 +138,27 @@ def merlin_to_fpd(rootpath=None, savepath=None, keep_unshaped=False,
 
         if keep_unshaped:
             unshapedfilename = tempfilenames[i][:-5] + "_Unshaped.hdf5"
-            unshaped = fpd.fpd_file.MerlinBinary(binfns=mibfiles,
-                                                 hdrfn=hdrfile,
-                                                 ds_start_skip=0,
-                                                 row_end_skip=0,
-                                                 sort_binary_file_list=False,
-                                                 strict=False,
-                                                 repack=True)
+            unshaped = fpdf.MerlinBinary(binfns=mibfiles,
+                                         hdrfn=hdrfile,
+                                         ds_start_skip=0,
+                                         row_end_skip=0,
+                                         sort_binary_file_list=False,
+                                         strict=False,
+                                         repack=True)
 
             logger.info("Saving unshaped data to file: %s" % unshapedfilename)
             unshaped.write_hdf5(unshapedfilename, ow=True, allow_memmap=False)
             del unshaped
 
         if save_dm:
-            s = fpd.fpd_file.MerlinBinary(binfns=mibfiles,
-                                          hdrfn=hdrfile,
-                                          ds_start_skip=skip_frames,
-                                          row_end_skip=0,
-                                          dmfns=dmfile[0],
-                                          sort_binary_file_list=False,
-                                          strict=False,
-                                          repack=True)
+            s = fpdf.MerlinBinary(binfns=mibfiles,
+                                  hdrfn=hdrfile,
+                                  ds_start_skip=skip_frames,
+                                  row_end_skip=0,
+                                  dmfns=dmfile[0],
+                                  sort_binary_file_list=False,
+                                  strict=False,
+                                  repack=True)
 
             logger.info("Saving to file w/ DM data: %s" % h5filenames[i])
         else:
@@ -167,15 +168,15 @@ def merlin_to_fpd(rootpath=None, savepath=None, keep_unshaped=False,
                 end_skip = 1
             else:
                 end_skip = 0
-            s = fpd.fpd_file.MerlinBinary(binfns=mibfiles,
-                                          hdrfn=hdrfile,
-                                          ds_start_skip=skip_frames,
-                                          row_end_skip=end_skip,
-                                          scanXalu=scanX,
-                                          scanYalu=scanY,
-                                          sort_binary_file_list=False,
-                                          strict=False,
-                                          repack=True)
+            s = fpdf.MerlinBinary(binfns=mibfiles,
+                                  hdrfn=hdrfile,
+                                  ds_start_skip=skip_frames,
+                                  row_end_skip=end_skip,
+                                  scanXalu=scanX,
+                                  scanYalu=scanY,
+                                  sort_binary_file_list=False,
+                                  strict=False,
+                                  repack=True)
 
             logger.info("Saving to file: %s" % h5filenames[i])
         s.write_hdf5(tempfilenames[i], ow=True, allow_memmap=False)
@@ -190,3 +191,77 @@ def merlin_to_fpd(rootpath=None, savepath=None, keep_unshaped=False,
     else:
         logger.info("Processing complete.")
     return h5filenames
+
+def merlin_to_fpd(datadir, reshape_dm=False):
+    '''Pull filenames from datadir and define output HDF5 file name'''
+    mib = glob.glob(datadir + '*.mib')
+    hdr = glob.glob(datadir + '*.hdr')
+    emi = glob.glob(datadir + '*.emi')
+    ser = glob.glob(datadir + '*.ser')
+    dm = glob.glob(datadir + '*.dm*')
+    h5file = os.path.splitext(mib[0])[0] + '.hdf5'
+
+    '''Basic check to see if Merlin MIB and HDR files are present'''
+    if len(mib) == 0 or len(hdr) == 0:
+        raise ValueError('Merlin data not found!')
+
+    '''Basic check to see if TIA SER files are present. If none are present, then the scanX and scanY variables
+    are set to None and FPD will not attempt to reshape the data. If SER files are present alongside an EMI
+    file, the data is loaded via the EMI file as this will pull in the microscope parameters as well.
+    If SER files are present but no EMI file is present, load the data using the SER files.
+    I'm sure Nexus has more robust ways of handling TIA EMI/SER file pairs.'''
+    save_dm = False
+    save_tia = False
+    if len(ser) == 0 and len(dm) == 0:
+        scanX = None
+        scanY = None
+    elif len(ser) > 0:
+        save_tia = True
+        if len(emi) == 0:
+            logger.info("'No EMI file found.  Microscope parameters cannot be determined")
+            im = load(ser[0])
+            '''Define scan axes for use with fpd.fpd_file.MerlinBinary using metadata from SER file'''
+            scanX, scanY = [(ax.axis, ax.name, ax.units) for ax in im.axes_manager.signal_axes]
+        else:
+            im = load(emi)
+            '''If multiple SER files are present, loading the EMI will result in a list of Signal2D objects.
+            Check if this is the case.  If so, discard all but the first Signal2D.'''
+            if type(im) is list:
+                im = im[0]
+            '''Define scan axes for use with fpd.fpd_file.MerlinBinary using metadata from SER file'''
+            scanX, scanY = [(ax.axis, ax.name, ax.units) for ax in im.axes_manager.signal_axes]
+    elif len(dm) > 0:
+        scanX, scanY, skip_frames, total_frames = get_scan_shape(mib)
+        save_dm = True
+
+
+    if save_dm:
+        mb = fpdf.MerlinBinary(binfns=mib,
+                               hdrfn=hdr[0],
+                               ds_start_skip=skip_frames,
+                               row_end_skip=0,
+                               dmfns=dm[0],
+                               sort_binary_file_list=False,
+                               strict=False)
+    else:
+        mb = fpdf.MerlinBinary(binfns=mib,
+                               hdrfn=hdr[0],
+                               ds_start_skip=0,
+                               row_end_skip=0,
+                               scanXalu=scanX,
+                               scanYalu=scanY,
+                               sort_binary_file_list=False,
+                               strict=False)
+
+
+    '''Write MerlinBinary to HDF5 file'''
+    #TODO: Check that data chunking parameters are best configured for Nexus.  This coce uses the default options where
+    #      the data is chunked by 16 in all dimensions.
+    mb.write_hdf5(h5file, allow_memmap=False)
+
+    if save_tia:
+        with h5py.File(h5file, 'r+') as h5:
+            h5.create_dataset('TIA', data=im)
+    return
+        
+        
