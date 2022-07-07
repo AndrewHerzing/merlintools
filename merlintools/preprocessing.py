@@ -12,7 +12,7 @@ import os
 import glob
 import logging
 import fpd.fpd_file as fpdf
-from merlintools.io import get_scan_shape
+from merlintools.io import get_scan_shape, create_dataset, save_results
 import tkinter as tk
 from tkinter import filedialog
 import time
@@ -193,6 +193,20 @@ def merlin_to_fpd_legacy(rootpath=None, savepath=None, keep_unshaped=False,
     return h5filenames
 
 def merlin_to_fpd(datadir, reshape_dm=False):
+    """
+    Convert Merlin files to FPD HDF5 archive and transfer to a storage location.
+
+    Args
+    ----------
+    datadir : str
+        Rootpath containing Merlin datasets.
+    reshape_dm : bool
+        If True, reshape data generated using Digital Micrograph by attempting to determine scan
+        shape based on exposure times.  This usually works but should be disabled if stability is important.
+        If False, DM generated data will be saved without reshaping. Default is False.
+
+    """
+
     '''Pull filenames from datadir and define output HDF5 file name'''
     mib = glob.glob(datadir + '*.mib')
     hdr = glob.glob(datadir + '*.hdr')
@@ -264,4 +278,28 @@ def merlin_to_fpd(datadir, reshape_dm=False):
             h5.create_dataset('TIA', data=im)
     return
         
-        
+def preprocess(datadir, processed_data_path=".", full_align=False):
+    """Perform preprocessing steps on FPD dataset
+    Convert Merlin files to FPD HDF5 archive and transfer to a storage location.
+
+    Args
+    ----------
+    datadir : str
+        Rootpath containing FPD datasets to preprocess.
+    processed_data_path : str
+        Path where preprocessed data will be saved.
+    full_align : bool
+        If True, data set is fully aligned and saved in results file.  Otherwise,
+        preprocessing is done without shifting the data.
+
+    """
+    h5files = glob.glob(datadir + "/**/*.hdf5", recursive=True)
+    data = [None]*len(h5files)
+    for i in range(0, len(h5files)):
+        data[i] = create_dataset(h5files[i], full_align, True)
+        outpath = os.path.join(processed_data_path, h5files[i].split('/')[-3], h5files[i].split('/')[-2])
+        if not os.path.exists(outpath):
+            os.makedirs(outpath)
+        outfile = outpath + '/' + h5files[i].split('/')[-1][:-5] + '_Processed.hdf5'
+        save_results(outfile, data[i])
+    return        
