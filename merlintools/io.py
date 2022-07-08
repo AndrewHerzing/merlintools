@@ -587,6 +587,13 @@ def create_dataset(h5file, full_align=False, check_file=True):
        qcal = get_calibration(params['HT'],params['CL'],'q')
        qcal_units = 'A^-1'
     nt = fpdf.fpd_to_tuple(h5file, fpd_check=check_file)
+    
+    # Get scan dimension calibrations
+    ycal = nt.fpd_sum_im.dim1.data[1] - nt.fpd_sum_im.dim1.data[0]
+    ycal_units = nt.fpd_sum_im.dim1.units
+    xcal = nt.fpd_sum_im.dim2.data[1] - nt.fpd_sum_im.dim2.data[0]
+    xcal_units = nt.fpd_sum_im.dim2.units
+    
     com_yx = fpdp.center_of_mass(nt.fpd_data.data, 32, 32, print_stats=False)
     # Remove NaN's from com_yx and replace with nearest non-NaN value
     mask = np.isnan(com_yx)
@@ -608,6 +615,10 @@ def create_dataset(h5file, full_align=False, check_file=True):
                'params': params,
                'qcal': qcal,
                'qcal_units': qcal_units,
+               'xcal': xcal,
+               'xcal_units': xcal_units,
+               'ycal': ycal,
+               'ycal_units': ycal_units,
                'com_yx' : com_yx,
                'min_center' : min_center,
                'shifts' : radial_shifts,
@@ -682,7 +693,11 @@ def read_h5_results(h5file):
                           'Magnification': np.float32(h5['params/Magnification'][...])}
         dataset['qcal'] = h5['qcal'][...]
         dataset['qcal_units'] = h5['qcal_units'][...]
+        dataset['xcal'] = h5['xcal'][...]
+        dataset['xcal_units'] = h5['xcal_units'][...]
         dataset['min_center'] = h5['min_center'][...]
+        dataset['ycal'] = h5['ycal'][...]
+        dataset['ycal_units'] = h5['ycal_units'][...]
         dataset['shifts'] = h5['shifts'][...]
         dataset['com_yx'] = h5['com_yx'][...]
         dataset['radial_profile'] = [h5['radial_profile/x'][...], h5['radial_profile/y'][...]]
