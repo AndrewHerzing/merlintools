@@ -684,7 +684,7 @@ def read_h5_results(h5file):
     """
     dataset = {}
     with h5py.File(h5file,'r') as h5:
-        dataset['filename'] = h5['filename'][()]
+        dataset['filename'] = h5['filename'].asstr()[()]
         if type(dataset['filename']) is bytes:
             dataset['filename'] = dataset['filename'].decode()
         dataset['nt'] = fpdf.fpd_to_tuple(dataset['filename'])
@@ -692,12 +692,12 @@ def read_h5_results(h5file):
                           'HT': np.float32(h5['params/HT'][...]),
                           'Magnification': np.float32(h5['params/Magnification'][...])}
         dataset['qcal'] = h5['qcal'][...]
-        dataset['qcal_units'] = h5['qcal_units'][...]
+        dataset['qcal_units'] = h5['qcal_units'].asstr()[()]
         dataset['xcal'] = h5['xcal'][...]
-        dataset['xcal_units'] = h5['xcal_units'][...]
+        dataset['xcal_units'] = h5['xcal_units'].asstr()[()]
         dataset['min_center'] = h5['min_center'][...]
         dataset['ycal'] = h5['ycal'][...]
-        dataset['ycal_units'] = h5['ycal_units'][...]
+        dataset['ycal_units'] = h5['ycal_units'].asstr()[()]
         dataset['shifts'] = h5['shifts'][...]
         dataset['com_yx'] = h5['com_yx'][...]
         dataset['radial_profile'] = [h5['radial_profile/x'][...], h5['radial_profile/y'][...]]

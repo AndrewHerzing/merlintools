@@ -156,8 +156,8 @@ def plot_q_images(data, crop=True, labels=None, figsize=None):
                                                 float(data['data']['nt'].DM0[2].data[-1] * 1000)))
     else:
         _ = plt.suptitle('%s ; FOV: %.0f %s' % (data['data']['filename'].split('/')[-2],
-                                                data['sum_image'].shape[1] * data['xcal'],
-                                                data['xcal_units']))
+                                                data['data']['sum_image'].shape[1] * data['data']['xcal'],
+                                                data['data']['xcal_units']))
     plt.tight_layout()
     return fig, ax
 
