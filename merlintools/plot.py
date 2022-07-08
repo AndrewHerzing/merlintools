@@ -145,9 +145,9 @@ def plot_q_images(data, crop=None, labels=None, figsize=None):
         figsize = (5*nimages, 5)
     fig,ax = plt.subplots(1, nimages, figsize=figsize)
     for i in range(0, nimages):
-         if crop.lower() == 'dm':
+         if crop in ['dm', 'DM']:
             ax[i].imshow(data['images'][i][:-1,1:], cmap='inferno')
-         if crop.lower() == 'tia':
+         if crop in ['tia', 'TIA']:
             ax[i].imshow(data['images'][i][1:,:], cmap='inferno')
          else:
              ax[i].imshow(data['images'][i], cmap='inferno')
