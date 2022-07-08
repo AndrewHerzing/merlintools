@@ -132,7 +132,7 @@ def plot_q_windows(data, q_ranges, log_scale=True, colors=None, alpha=0.5, cente
     
     return fig
 
-def plot_q_images(data, crop=True, labels=None, figsize=None):
+def plot_q_images(data, crop=None, labels=None, figsize=None):
     nimages = len(data['images'])
     if labels is None:
         labels = [None]*nimages
@@ -145,8 +145,10 @@ def plot_q_images(data, crop=True, labels=None, figsize=None):
         figsize = (5*nimages, 5)
     fig,ax = plt.subplots(1, nimages, figsize=figsize)
     for i in range(0, nimages):
-         if crop:
+         if crop.lower() == 'dm':
             ax[i].imshow(data['images'][i][:-1,1:], cmap='inferno')
+         if crop.lower() == 'tia':
+            ax[i].imshow(data['images'][i][1:,:], cmap='inferno')
          else:
              ax[i].imshow(data['images'][i], cmap='inferno')
          ax[i].set_title(labels[i])
