@@ -682,6 +682,8 @@ def read_h5_results(h5file):
         radial profile, etc.
 
     """
+    data_keys = ['qcal', 'xcal',' min_center', 'ycal', 'shifts', 'com_yx', 'radii','apertures']
+    str_keys = ['qcal_units', 'xcal_units', 'ycal_units']
     dataset = {}
     with h5py.File(h5file,'r') as h5:
         dataset['filename'] = h5['filename'].asstr()[()]
@@ -691,27 +693,21 @@ def read_h5_results(h5file):
         dataset['params'] = {'CL': np.float32(h5['params/CL'][...]),
                           'HT': np.float32(h5['params/HT'][...]),
                           'Magnification': np.float32(h5['params/Magnification'][...])}
-        dataset['qcal'] = h5['qcal'][...]
-        dataset['qcal_units'] = h5['qcal_units'].asstr()[()]
-        dataset['xcal'] = h5['xcal'][...]
-        dataset['xcal_units'] = h5['xcal_units'].asstr()[()]
-        dataset['min_center'] = h5['min_center'][...]
-        dataset['ycal'] = h5['ycal'][...]
-        dataset['ycal_units'] = h5['ycal_units'].asstr()[()]
-        dataset['shifts'] = h5['shifts'][...]
-        dataset['com_yx'] = h5['com_yx'][...]
-        dataset['radial_profile'] = [h5['radial_profile/x'][...], h5['radial_profile/y'][...]]
-        dataset['radii'] = h5['radii'][...]
-        dataset['apertures'] = h5['apertures'][...]
-        dataset['sum_image'] = h5['sum_image'][...],
-        dataset['sum_image'] = dataset['sum_image'][0]
-        dataset['sum_dp'] = h5['sum_dp'][...],
-        dataset['sum_dp'] = dataset['sum_dp'][0],
-        dataset['aligned'] = h5['aligned'][...],
-        dataset['aligned'] = dataset['aligned'][0]
-        dataset['images'] = {}
-        for im in h5['images'].keys():
-            dataset['images'][im] = h5['images'][im][...]
+        for k in data_keys:
+            if k in h5.keys():
+                dataset[k] = h5[k][...]
+        for k in str_keys:
+            if k in h5.keys():
+                dataset[k] = h5[k].asstr()[()]
+        for k in ['sum_image', 'sum_dp', 'aligned']:
+            dataset[k] = h5[k][...],
+            dataset[k] = dataset[k][0]
+        if 'radial_profile' in h5.keys():
+            dataset['radial_profile'] = [h5['radial_profile/x'][...], h5['radial_profile/y'][...]]
+        if 'images' in h5.keys():
+            dataset['images'] = {}
+            for im in h5['images'].keys():
+                dataset['images'][im] = h5['images'][im][...]
     return dataset
 
 def read_single_mib(filename, det_shape=[256,256]):
