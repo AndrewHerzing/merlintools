@@ -383,7 +383,8 @@ def get_q_images(data, q_ranges):
     """
     if type(q_ranges) is not list:
         q_ranges = [q_ranges]
-    ims = np.array(np.zeros([len(q_ranges), data['sum_image'].shape[0], data['sum_image'].shape[1]]))
+    ims = np.array(np.zeros([len(q_ranges), data['radial_profile'][1].shape[0],
+                             data['radial_profile'][1].shape[1]]))
     
     for i in range(0, len(q_ranges)):
         idx = np.where(np.logical_and(data['radial_profile'][0] > q_ranges[i][0], data['radial_profile'][0] < q_ranges[i][1]))[0]
