@@ -306,6 +306,38 @@ def get_max_dps(data_4d, image, n_pix=100):
     dps = hs.signals.Signal2D(dps)
     return dps, locs
 
+def get_min_dps(data_4d, image, n_pix=100):
+    """
+    Return a HyperSpy signal containing the diffraction patterns from the least intense pixels in an image.
+
+    For example, an ADF image can be provided and the diffraction patterns which
+    contributed the least intensity to the ADF aperture will be returned.
+
+    Args
+    ----------
+    data_4d : NumPy array
+        4D-STEM dataset
+    image : NumPy array
+        Image to be used for locating diffraction patterns.
+    n_pix : int
+        The number of patterns to return.
+
+    Returns
+    ----------
+    dps : HyperSpy Signal2D
+
+    """
+    dps = np.zeros([n_pix, data_4d.shape[2], data_4d.shape[3]])
+    min_locs = image.ravel().argsort()
+    locs = [None]*n_pix
+    for i in range(0, n_pix):
+        row, col = np.unravel_index(min_locs[i], data_4d.shape[0:2])
+        locs[i] = [row, col]
+        dps[i] = data_4d[row, col, :, :]
+
+    dps = hs.signals.Signal2D(dps)
+    return dps, locs
+
 def get_virtual_images(data4d, com_yx, apertures, sub_pixel=True, nr=128, nc=128):
     """
     Extract a virtual image using a radial mask with varying center.
