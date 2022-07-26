@@ -682,7 +682,7 @@ def read_h5_results(h5file):
         radial profile, etc.
 
     """
-    data_keys = ['qcal', 'xcal',' min_center', 'ycal', 'shifts', 'com_yx', 'radii','apertures']
+    data_keys = ['qcal', 'xcal', 'min_center', 'ycal', 'shifts', 'com_yx', 'radii','apertures']
     str_keys = ['qcal_units', 'xcal_units', 'ycal_units']
     dataset = {}
     with h5py.File(h5file,'r') as h5:
