@@ -118,7 +118,7 @@ def merlin_to_fpd(datadir, savedir='./', reshape_dm=False):
     mb.write_hdf5(h5file, allow_memmap=False)
     return
         
-def preprocess(datadir, processed_data_path=".", full_align=False):
+def preprocess(datadir, processed_data_path=".", full_align=False, check_fpd=True):
     """Perform preprocessing steps on FPD dataset
     Convert Merlin files to FPD HDF5 archive and transfer to a storage location.
 
@@ -136,7 +136,7 @@ def preprocess(datadir, processed_data_path=".", full_align=False):
     h5files = glob.glob(datadir + "/**/*.hdf5", recursive=True)
     data = [None]*len(h5files)
     for i in range(0, len(h5files)):
-        data[i] = create_dataset(h5files[i], full_align, True)
+        data[i] = create_dataset(h5files[i], full_align, check_fpd)
         outpath = os.path.join(processed_data_path, h5files[i].split('/')[-3], h5files[i].split('/')[-2])
         if not os.path.exists(outpath):
             os.makedirs(outpath)
