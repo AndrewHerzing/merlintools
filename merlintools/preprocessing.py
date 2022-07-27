@@ -234,6 +234,7 @@ def merlin_to_fpd(datadir, reshape_dm=False):
         if len(emi) == 0:
             logger.info("'No EMI file found.  Microscope parameters cannot be determined")
             im = load(ser[0])
+            tiafiles = ser
             '''Define scan axes for use with fpd.fpd_file.MerlinBinary using metadata from SER file'''
             scanX, scanY = [(ax.axis, ax.name, ax.units) for ax in im.axes_manager.signal_axes]
         else:
@@ -242,6 +243,7 @@ def merlin_to_fpd(datadir, reshape_dm=False):
             Check if this is the case.  If so, discard all but the first Signal2D.'''
             if type(im) is list:
                 im = im[0]
+            tiafiles = emi
             '''Define scan axes for use with fpd.fpd_file.MerlinBinary using metadata from SER file'''
             scanX, scanY = [(ax.axis, ax.name, ax.units) for ax in im.axes_manager.signal_axes]
     elif len(dm) > 0:
@@ -255,6 +257,14 @@ def merlin_to_fpd(datadir, reshape_dm=False):
                                ds_start_skip=skip_frames,
                                row_end_skip=0,
                                dmfns=dm[0],
+                               sort_binary_file_list=False,
+                               strict=False)
+    elif save_tia:
+        mb = fpdf.MerlinBinary(binfns=mib,
+                               hdrfn=hdr[0],
+                               ds_start_skip=skip_frames,
+                               row_end_skip=0,
+                               tiafns=tiafiles[0],
                                sort_binary_file_list=False,
                                strict=False)
     else:
