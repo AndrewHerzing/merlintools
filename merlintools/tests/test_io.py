@@ -155,6 +155,20 @@ class TestGetMicroscopeParameters:
         temp_dir.cleanup()
         assert params['HT'] == 200.0
 
+class TestGetMerlinParameters:
+    def test_get_merlin_parameters_string(self):
+        h5file = os.path.join(merlin_path, "tests", "test_data",
+                              "FPD_HDF5.hdf5")
+        params = merlintools.io.get_merlin_parameters(h5file)
+        assert params['Detector shape'] == [256, 256]
+    
+    def test_get_merlin_parameters_h5(self):
+        h5file = os.path.join(merlin_path, "tests", "test_data",
+                              "FPD_HDF5.hdf5")
+        with h5py.File(h5file,'r') as h5:
+            params = merlintools.io.get_merlin_parameters(h5)
+        assert params['Detector shape'] == [256, 256]
+
 class TestHeaderParsing:
     """Test header parsing functionality."""
 
@@ -177,3 +191,11 @@ class TestHeaderParsing:
         assert 'HeaderID' in header.keys()
         assert 'ExtCounterDepth' in header.keys()
         assert header['DataOffset'] == 384
+
+class TestReadSingleMIB:
+
+    def test_load_single_mib(self):
+        mibfile = os.path.join(merlin_path, "tests", "test_data",
+                               "SingleMIB.mib")
+        mibfile = merlintools.io.read_single_mib(mibfile)
+        assert isinstance(mibfile, np.ndarray)
