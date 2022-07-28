@@ -690,9 +690,14 @@ def read_h5_results(h5file):
         if type(dataset['filename']) is bytes:
             dataset['filename'] = dataset['filename'].decode()
         dataset['nt'] = fpdf.fpd_to_tuple(dataset['filename'])
-        dataset['params'] = {'CL': np.float32(h5['params/CL'][...]),
-                          'HT': np.float32(h5['params/HT'][...]),
-                          'Magnification': np.float32(h5['params/Magnification'][...])}
+        dataset['params'] = {'CL': 'Unknown', 
+                             'HT': 'Unknown',
+                             'Magnification': 'Unknown'}
+        for param in ['CL', 'HT', 'Magnification']:
+            if type(h5['params/%s' % param][()]) is bytes:
+                pass
+            else:
+                dataset['params'][param] = np.float32(h5['params/%s' % param][...])
         for k in data_keys:
             if k in h5.keys():
                 dataset[k] = h5[k][...]
