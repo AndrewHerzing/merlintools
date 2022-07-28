@@ -508,7 +508,7 @@ def get_experimental_parameters(rootpath="./"):
         Pandas DataFrame containing the extracted experimental parameters
 
     """
-    h5files = glob.glob(rootpath + "**/*.hdf5", recursive=True)
+    h5files = glob.glob(rootpath + "/**/*.hdf5", recursive=True)
     h5files = [x for x in h5files if not x.endswith('Aligned.hdf5') or x.endswith('aligned.hdf5')]
 
     datapaths = [None] * len(h5files)

@@ -15,6 +15,7 @@ import glob
 from tempfile import TemporaryDirectory
 import h5py
 import fpd.fpd_file as fpdf
+import pandas
 
 merlin_path = os.path.dirname(merlintools.__file__)
 
@@ -199,3 +200,18 @@ class TestReadSingleMIB:
                                "SingleMIB.mib")
         mibfile = merlintools.io.read_single_mib(mibfile)
         assert isinstance(mibfile, np.ndarray)
+
+class TestOtherIOFunctions:
+    def test_get_experimental_parameters(self):
+        rootpath = os.path.join(merlin_path, "tests", "test_data", "Archive-Directory")
+        df = merlintools.io.get_experimental_parameters(rootpath + '/')
+        assert isinstance(df, pandas.DataFrame)
+        assert df['Beam Energy'][0] == 200.0
+    
+    def test_get_axes_dict(self):
+        h5filename = os.path.join(merlin_path, "tests", "test_data", "FPD_HDF5.hdf5")
+        nt = fpdf.fpd_to_tuple(h5filename)
+        axes_dict = merlintools.io.get_spatial_axes_dict(nt)
+        assert isinstance(axes_dict, dict)
+        assert axes_dict['axis-0']['units'] == 'nm'
+        assert {"axis-0", "axis-1"} <= axes_dict.keys()
