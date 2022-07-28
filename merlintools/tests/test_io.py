@@ -11,8 +11,10 @@ test_io module for MerlinTools package.
 import merlintools
 import os
 import numpy as np
-from hyperspy.signals import Signal2D
 import glob
+from tempfile import TemporaryDirectory
+import h5py
+import fpd.fpd_file as fpdf
 
 merlin_path = os.path.dirname(merlintools.__file__)
 
@@ -57,6 +59,101 @@ class TestMIBConversion:
         dm = glob.glob(datadir + '/*.dm*')
         mb = merlintools.preprocessing.get_merlin_binary(mib, hdr, emi, ser, dm)
         assert mb.shape == (16,16,256,256)
+
+class TestGetMicroscopeParameters:
+    def test_tia_scope_parameters_filename(self):
+        temp_dir = TemporaryDirectory()
+        h5filename = temp_dir.name + "tempfile.hdf5"
+        datadir = os.path.join(merlin_path, "tests", "test_data", "TIA-Scan")
+        mib = glob.glob(datadir + '/*.mib')
+        hdr = glob.glob(datadir + '/*.hdr')
+        emi = glob.glob(datadir + '/*.emi')
+        ser = glob.glob(datadir + '/*.ser')
+        dm = glob.glob(datadir + '/*.dm*')
+        mb = merlintools.preprocessing.get_merlin_binary(mib, hdr, emi, ser, dm)
+        mb.write_hdf5(h5filename)
+        params = merlintools.io.get_microscope_parameters(h5filename)
+        temp_dir.cleanup()
+        assert params['HT'] == 200.0
+
+    def test_tia_scope_parameters_h5(self):
+        temp_dir = TemporaryDirectory()
+        h5filename = temp_dir.name + "tempfile.hdf5"
+        datadir = os.path.join(merlin_path, "tests", "test_data", "TIA-Scan")
+        mib = glob.glob(datadir + '/*.mib')
+        hdr = glob.glob(datadir + '/*.hdr')
+        emi = glob.glob(datadir + '/*.emi')
+        ser = glob.glob(datadir + '/*.ser')
+        dm = glob.glob(datadir + '/*.dm*')
+        mb = merlintools.preprocessing.get_merlin_binary(mib, hdr, emi, ser, dm)
+        mb.write_hdf5(h5filename)
+        with h5py.File(h5filename,'r') as h5:
+            params = merlintools.io.get_microscope_parameters(h5)
+        temp_dir.cleanup()
+        assert params['HT'] == 200.0
+    
+    def test_tia_scope_parameters_nt(self):
+        temp_dir = TemporaryDirectory()
+        h5filename = temp_dir.name + "tempfile.hdf5"
+        datadir = os.path.join(merlin_path, "tests", "test_data", "TIA-Scan")
+        mib = glob.glob(datadir + '/*.mib')
+        hdr = glob.glob(datadir + '/*.hdr')
+        emi = glob.glob(datadir + '/*.emi')
+        ser = glob.glob(datadir + '/*.ser')
+        dm = glob.glob(datadir + '/*.dm*')
+        mb = merlintools.preprocessing.get_merlin_binary(mib, hdr, emi, ser, dm)
+        mb.write_hdf5(h5filename)
+        nt = fpdf.fpd_to_tuple(h5filename)
+        params = merlintools.io.get_microscope_parameters(nt)
+        temp_dir.cleanup()
+        assert params['HT'] == 200.0
+
+    def test_dm_scope_parameters_filename(self):
+        temp_dir = TemporaryDirectory()
+        h5filename = temp_dir.name + "tempfile.hdf5"
+        datadir = os.path.join(merlin_path, "tests", "test_data", "DM-Scan_ExtraFrames")
+        mib = glob.glob(datadir + '/*.mib')
+        hdr = glob.glob(datadir + '/*.hdr')
+        emi = glob.glob(datadir + '/*.emi')
+        ser = glob.glob(datadir + '/*.ser')
+        dm = glob.glob(datadir + '/*.dm*')
+        mb = merlintools.preprocessing.get_merlin_binary(mib, hdr, emi, ser, dm)
+        mb.write_hdf5(h5filename)
+        params = merlintools.io.get_microscope_parameters(h5filename)
+        temp_dir.cleanup()
+        assert params['HT'] == 200.0
+
+    def test_dm_scope_parameters_h5(self):
+        temp_dir = TemporaryDirectory()
+        h5filename = temp_dir.name + "tempfile.hdf5"
+        datadir = os.path.join(merlin_path, "tests", "test_data", "DM-Scan_ExtraFrames")
+        mib = glob.glob(datadir + '/*.mib')
+        hdr = glob.glob(datadir + '/*.hdr')
+        emi = glob.glob(datadir + '/*.emi')
+        ser = glob.glob(datadir + '/*.ser')
+        dm = glob.glob(datadir + '/*.dm*')
+        mb = merlintools.preprocessing.get_merlin_binary(mib, hdr, emi, ser, dm)
+        mb.write_hdf5(h5filename)
+        with h5py.File(h5filename,'r') as h5:
+            params = merlintools.io.get_microscope_parameters(h5)
+        temp_dir.cleanup()
+        assert params['HT'] == 200.0
+    
+    def test_dm_scope_parameters_nt(self):
+        temp_dir = TemporaryDirectory()
+        h5filename = temp_dir.name + "tempfile.hdf5"
+        datadir = os.path.join(merlin_path, "tests", "test_data", "DM-Scan_ExtraFrames")
+        mib = glob.glob(datadir + '/*.mib')
+        hdr = glob.glob(datadir + '/*.hdr')
+        emi = glob.glob(datadir + '/*.emi')
+        ser = glob.glob(datadir + '/*.ser')
+        dm = glob.glob(datadir + '/*.dm*')
+        mb = merlintools.preprocessing.get_merlin_binary(mib, hdr, emi, ser, dm)
+        mb.write_hdf5(h5filename)
+        nt = fpdf.fpd_to_tuple(h5filename)
+        params = merlintools.io.get_microscope_parameters(nt)
+        temp_dir.cleanup()
+        assert params['HT'] == 200.0
 
 class TestHeaderParsing:
     """Test header parsing functionality."""

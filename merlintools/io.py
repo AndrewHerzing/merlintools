@@ -339,8 +339,8 @@ def get_microscope_parameters(data, display=False):
     """
     Get microscope parameters for 4D-STEM data.
 
-    Parses the simultaneously acquired Digital Micrograph (.dm3/.dm4) file
-    to determine camera length, high tension, and magnification.
+    Reads camera length, high tension, and magnifiction from metadata
+    in HDF5 file or FPD named tuple.
 
     Args
     ----------
@@ -363,17 +363,30 @@ def get_microscope_parameters(data, display=False):
                             "Microscope Info/Voltage"][...]) / 1000
             mag = float(data["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
                              "Microscope Info/Indicated Magnification"][...])
+        elif "TIA0" in data["/fpd_expt/"].keys():
+            if "ExperimentalDescription" in data["/fpd_expt/TIA0/tags/ObjectInfo"]:
+                logger.info("Found microscope parameters in TIA metadata in FPD file")
+                cl = float(1000*data["fpd_expt/TIA0/tags/ObjectInfo/"
+                                     "ExperimentalDescription"]["Camera length_m"][...])
+                mag = float(data["fpd_expt/TIA0/tags/ObjectInfo/"
+                                 "ExperimentalDescription"]["Magnification_x"][...])
+                ht = float(data["fpd_expt/TIA0/tags/ObjectInfo/"
+                                "ExperimentalDescription"]["High tension_kV"][...])
         else:
             logger.info("Unable to find microscope parameters in FPD file")
             cl = "Unknown"
             ht = "Unknown"
             mag = "Unknown"
     elif isinstance(data, str):
+        h5_has_dm = False
+        h5_has_tia = False
         if os.path.splitext(data)[-1].lower() == '.hdf5':
             with h5py.File(data, 'r') as h5:
                 h5keys = h5["/fpd_expt/"].keys()
-                
                 h5_has_dm = "DM0" in h5keys
+                if "TIA0" in h5keys:
+                    if "ExperimentalDescription" in h5["/fpd_expt/TIA0/tags/ObjectInfo"].keys():
+                        h5_has_tia = True
             if h5_has_dm:
                 with h5py.File(data, 'r') as h5:
                     cl = float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
@@ -383,6 +396,15 @@ def get_microscope_parameters(data, display=False):
                     mag = float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
                                 "Microscope Info/Indicated Magnification"][...])
                     logger.info("Found DM metadata in FPD file")
+            elif h5_has_tia:
+                with h5py.File(data, 'r') as h5:
+                    cl = float(1000*h5["fpd_expt/TIA0/tags/ObjectInfo/"
+                                       "ExperimentalDescription"]["Camera length_m"][...])
+                    ht = float(h5["fpd_expt/TIA0/tags/ObjectInfo/"
+                                  "ExperimentalDescription"]["High tension_kV"][...])
+                    mag = float(h5["fpd_expt/TIA0/tags/ObjectInfo/"
+                                  "ExperimentalDescription"]["Magnification_x"][...])
+                    logger.info("Found TIA metadata in FPD file")
             elif len(glob.glob(os.path.split(data)[0] + '/*.emi')) > 0:
                 emifile = glob.glob(os.path.split(data)[0] + '/*.emi')[0]
                 im = load(emifile)
@@ -397,20 +419,29 @@ def get_microscope_parameters(data, display=False):
                 cl = "Unknown"
                 ht = "Unknown"
                 mag = "Unknown"
-    else:
-        if "DM0" in data._fields():
+    elif isinstance(data, tuple) and hasattr(data, '_fields'):
+        if "DM0" in data._fields:
             cl = float(data.DM0.tags["ImageList/TagGroup0/ImageTags/"
                                      "Microscope Info/STEM Camera Length"][...])
             ht = float(data.DM0.tags["ImageList/TagGroup0/ImageTags/"
                                      "Microscope Info/Voltage"][...]) / 1000
-            mag = float(data.DM0.tags["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
+            mag = float(data.DM0.tags["ImageList/TagGroup0/ImageTags/"
                                       "Microscope Info/Indicated Magnification"][...])
             logger.info("Found microscope parameters in DM metadata of FPD file")
-        else:
-            logger.info("Unable to find microscope parameters in FPD file")
-            cl = "Unknown"
-            ht = "Unknown"
-            mag = "Unknown"
+        elif "TIA0" in data._fields:
+            if "ExperimentalDescription" in data.TIA0.tags['ObjectInfo'].keys():
+                cl = float(1000*data.TIA0.tags["ObjectInfo/"
+                                               "ExperimentalDescription"]["Camera length_m"][...])
+                ht = float(data.TIA0.tags["ObjectInfo/"
+                                          "ExperimentalDescription"]["High tension_kV"][...])
+                mag = float(data.TIA0.tags["ObjectInfo/"
+                                           "ExperimentalDescription"]["Magnification_x"][...])
+                logger.info("Found microscope parameters in TIA metadata of FPD file")
+    else:
+        logger.info("Unable to find microscope parameters in FPD file")
+        cl = "Unknown"
+        ht = "Unknown"
+        mag = "Unknown"
     if display:
         print("Microscope voltage: %.1f kV" % ht)
         print("STEM Camera Length: %.1f mm" % cl)
