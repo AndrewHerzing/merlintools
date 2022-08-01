@@ -493,14 +493,14 @@ def get_spatial_axes_dict(nt):
     return axes_dict
 
 
-def get_experimental_parameters(rootpath="./"):
+def get_experimental_parameters(h5files):
     """
     Create a Pandas DataFrame containing experimental parameters from HDF5 files.
 
     Args
     ----------
-    rootpath : str
-        Path to data.  All sub-folders will also be inspected
+    h5files : str or list
+        Files to parse
 
     Returns
     ----------
@@ -508,9 +508,6 @@ def get_experimental_parameters(rootpath="./"):
         Pandas DataFrame containing the extracted experimental parameters
 
     """
-    h5files = glob.glob(rootpath + "/**/*.hdf5", recursive=True)
-    h5files = [x for x in h5files if not x.endswith('Aligned.hdf5') or x.endswith('aligned.hdf5')]
-
     datapaths = [None] * len(h5files)
     h5filenames = [None] * len(h5files)
     hts = [None] * len(h5files)
