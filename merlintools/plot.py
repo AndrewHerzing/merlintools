@@ -87,7 +87,7 @@ def plot_q_windows(data, q_ranges, log_scale=True, colors=None, alpha=0.5, cente
         Handle for plot
     """
     if colors is None:
-        colors = ['blue','green','purple','magenta','cyan']
+        colors = ['blue','green','purple','magenta','cyan','yellow','orange']
     if type(q_ranges) is not list:
         q_ranges = [q_ranges]
     
