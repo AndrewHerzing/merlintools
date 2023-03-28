@@ -16,9 +16,11 @@ from tempfile import TemporaryDirectory
 
 merlin_path = os.path.dirname(merlintools.__file__)
 
+
 class TestPreprocessing:
     """Test MIB conversion functionality."""
-    def test_not_full_aligned(self):
+
+    def test_no_radial_profile(self):
         test_data_dir = os.path.join(merlin_path, "tests", "test_data")
         temp_dir = TemporaryDirectory()
         merlintools.preprocessing.preprocess(test_data_dir, temp_dir.name)

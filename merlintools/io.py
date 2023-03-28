@@ -321,7 +321,7 @@ def get_merlin_parameters(data):
             scanY, scanX, detY, detX = h5["fpd_expt/fpd_data/data"].shape
             exposures = np.round(h5["fpd_expt/Exposure/data"][...] / 1e6, 1)
             frame_times, counts = np.unique(exposures, return_counts=True)
-            positive_idx = np.where(frame_times>=0)
+            positive_idx = np.where(frame_times >= 0)
             frame_times = frame_times[positive_idx]
             counts = counts[positive_idx]
             frame_time = frame_times[counts.argmax()]
@@ -366,8 +366,8 @@ def get_microscope_parameters(data, display=False):
         elif "TIA0" in data["/fpd_expt/"].keys():
             if "ExperimentalDescription" in data["/fpd_expt/TIA0/tags/ObjectInfo"]:
                 logger.info("Found microscope parameters in TIA metadata in FPD file")
-                cl = float(1000*data["fpd_expt/TIA0/tags/ObjectInfo/"
-                                     "ExperimentalDescription"]["Camera length_m"][...])
+                cl = float(1000 * data["fpd_expt/TIA0/tags/ObjectInfo/"
+                                       "ExperimentalDescription"]["Camera length_m"][...])
                 mag = float(data["fpd_expt/TIA0/tags/ObjectInfo/"
                                  "ExperimentalDescription"]["Magnification_x"][...])
                 ht = float(data["fpd_expt/TIA0/tags/ObjectInfo/"
@@ -390,20 +390,20 @@ def get_microscope_parameters(data, display=False):
             if h5_has_dm:
                 with h5py.File(data, 'r') as h5:
                     cl = float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
-                                "Microscope Info/STEM Camera Length"][...])
+                                  "Microscope Info/STEM Camera Length"][...])
                     ht = float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
-                                "Microscope Info/Voltage"][...]) / 1000
+                                  "Microscope Info/Voltage"][...]) / 1000
                     mag = float(h5["fpd_expt/DM0/tags/ImageList/TagGroup0/ImageTags/"
-                                "Microscope Info/Indicated Magnification"][...])
+                                   "Microscope Info/Indicated Magnification"][...])
                     logger.info("Found DM metadata in FPD file")
             elif h5_has_tia:
                 with h5py.File(data, 'r') as h5:
-                    cl = float(1000*h5["fpd_expt/TIA0/tags/ObjectInfo/"
-                                       "ExperimentalDescription"]["Camera length_m"][...])
+                    cl = float(1000 * h5["fpd_expt/TIA0/tags/ObjectInfo/"
+                                         "ExperimentalDescription"]["Camera length_m"][...])
                     ht = float(h5["fpd_expt/TIA0/tags/ObjectInfo/"
                                   "ExperimentalDescription"]["High tension_kV"][...])
                     mag = float(h5["fpd_expt/TIA0/tags/ObjectInfo/"
-                                  "ExperimentalDescription"]["Magnification_x"][...])
+                                   "ExperimentalDescription"]["Magnification_x"][...])
                     logger.info("Found TIA metadata in FPD file")
             elif len(glob.glob(os.path.split(data)[0] + '/*.emi')) > 0:
                 emifile = glob.glob(os.path.split(data)[0] + '/*.emi')[0]
@@ -430,8 +430,8 @@ def get_microscope_parameters(data, display=False):
             logger.info("Found microscope parameters in DM metadata of FPD file")
         elif "TIA0" in data._fields:
             if "ExperimentalDescription" in data.TIA0.tags['ObjectInfo'].keys():
-                cl = float(1000*data.TIA0.tags["ObjectInfo/"
-                                               "ExperimentalDescription"]["Camera length_m"][...])
+                cl = float(1000 * data.TIA0.tags["ObjectInfo/"
+                                                 "ExperimentalDescription"]["Camera length_m"][...])
                 ht = float(data.TIA0.tags["ObjectInfo/"
                                           "ExperimentalDescription"]["High tension_kV"][...])
                 mag = float(data.TIA0.tags["ObjectInfo/"
@@ -547,8 +547,6 @@ def get_experimental_parameters(h5files):
             frame_times[i] = merlin_params['Frame time']
             thresholds[i] = merlin_params['Threshold']
 
-
-
     df = pd.DataFrame()
     df['Data Path'] = datapaths
     df['H5 File'] = h5filenames
@@ -590,6 +588,7 @@ def fpd_check(data):
         else:
             return False
 
+
 def create_dataset(h5file, full_align=False, check_file=True):
     """
     Read an FPD dataset and perform useful operations.
@@ -612,16 +611,16 @@ def create_dataset(h5file, full_align=False, check_file=True):
         qcal = 1
         qcal_units = 'pixels'
     else:
-       qcal = get_calibration(params['HT'],params['CL'],'q')
-       qcal_units = 'A^-1'
+        qcal = get_calibration(params['HT'], params['CL'], 'q')
+        qcal_units = 'A^-1'
     nt = fpdf.fpd_to_tuple(h5file, fpd_check=check_file)
-    
+
     # Get scan dimension calibrations
     ycal = nt.fpd_sum_im.dim1.data[1] - nt.fpd_sum_im.dim1.data[0]
     ycal_units = nt.fpd_sum_im.dim1.units
     xcal = nt.fpd_sum_im.dim2.data[1] - nt.fpd_sum_im.dim2.data[0]
     xcal_units = nt.fpd_sum_im.dim2.units
-    
+
     com_yx = fpdp.center_of_mass(nt.fpd_data.data, 32, 32, print_stats=False)
     # Remove NaN's from com_yx and replace with nearest non-NaN value
     mask = np.isnan(com_yx)
@@ -631,8 +630,8 @@ def create_dataset(h5file, full_align=False, check_file=True):
     ali_shifts = (com_yx - min_center[..., None, None])
     if full_align:
         ali = shift_align(nt.fpd_data.data, ali_shifts, 32, 32, True, 3)
-        sum_im = ali.sum((2,3))
-        sum_dp = ali.sum((0,1))
+        sum_im = ali.sum((2, 3))
+        sum_dp = ali.sum((0, 1))
     else:
         ali = None
         sum_im = nt.fpd_sum_im.data
@@ -647,10 +646,10 @@ def create_dataset(h5file, full_align=False, check_file=True):
                'xcal_units': xcal_units,
                'ycal': ycal,
                'ycal_units': ycal_units,
-               'com_yx' : com_yx,
-               'min_center' : min_center,
-               'shifts' : radial_shifts,
-               'radial_profile' : profile,
+               'com_yx': com_yx,
+               'min_center': min_center,
+               'shifts': radial_shifts,
+               'radial_profile': profile,
                'apertures': None,
                'radii': None,
                'aligned': ali,
@@ -658,6 +657,7 @@ def create_dataset(h5file, full_align=False, check_file=True):
                'sum_dp': sum_dp,
                'images': {}}
     return dataset
+
 
 def save_results(h5filename, dataset):
     """
@@ -693,6 +693,7 @@ def save_results(h5filename, dataset):
                 h5.create_dataset(k, data=dataset[k])
     return
 
+
 def read_h5_results(h5file):
     """
     Read HDF5 file generated using merlintools.io.save_results.
@@ -710,15 +711,15 @@ def read_h5_results(h5file):
         radial profile, etc.
 
     """
-    data_keys = ['qcal', 'xcal', 'min_center', 'ycal', 'shifts', 'com_yx', 'radii','apertures']
+    data_keys = ['qcal', 'xcal', 'min_center', 'ycal', 'shifts', 'com_yx', 'radii', 'apertures']
     str_keys = ['qcal_units', 'xcal_units', 'ycal_units']
     dataset = {}
-    with h5py.File(h5file,'r') as h5:
+    with h5py.File(h5file, 'r') as h5:
         dataset['filename'] = h5['filename'].asstr()[()]
         if type(dataset['filename']) is bytes:
             dataset['filename'] = dataset['filename'].decode()
         dataset['nt'] = fpdf.fpd_to_tuple(dataset['filename'])
-        dataset['params'] = {'CL': 'Unknown', 
+        dataset['params'] = {'CL': 'Unknown',
                              'HT': 'Unknown',
                              'Magnification': 'Unknown'}
         for param in ['CL', 'HT', 'Magnification']:
@@ -743,7 +744,8 @@ def read_h5_results(h5file):
                 dataset['images'][im] = h5['images'][im][...]
     return dataset
 
-def read_single_mib(filename, det_shape=[256,256]):
+
+def read_single_mib(filename, det_shape=[256, 256]):
     """
     Quickly read an individual MIB file.
 

@@ -13,13 +13,7 @@ import glob
 import logging
 import fpd.fpd_file as fpdf
 from merlintools.io import get_scan_shape, create_dataset, save_results
-import tkinter as tk
-from tkinter import filedialog
-import time
-import shutil
-from pathlib import Path
 from hyperspy.io import load
-import h5py
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -57,7 +51,6 @@ def get_merlin_binary(mib, hdr, emi, ser, dm):
         scanX, scanY, skip_frames, total_frames = get_scan_shape(mib)
         save_dm = True
 
-
     if save_dm:
         mb = fpdf.MerlinBinary(binfns=mib,
                                hdrfn=hdr[0],
@@ -84,6 +77,7 @@ def get_merlin_binary(mib, hdr, emi, ser, dm):
                                sort_binary_file_list=False,
                                strict=False)
     return mb
+
 
 def merlin_to_fpd(datadir, savedir='./', reshape_dm=False):
     """
@@ -117,7 +111,8 @@ def merlin_to_fpd(datadir, savedir='./', reshape_dm=False):
     '''Write MerlinBinary to HDF5 file'''
     mb.write_hdf5(h5file, allow_memmap=False)
     return
-        
+
+
 def preprocess(datadir, processed_data_path=".", full_align=False, check_fpd=True):
     """Perform preprocessing steps on FPD dataset
     Convert Merlin files to FPD HDF5 archive and transfer to a storage location.
@@ -134,7 +129,7 @@ def preprocess(datadir, processed_data_path=".", full_align=False, check_fpd=Tru
 
     """
     h5files = glob.glob(datadir + "/**/*.hdf5", recursive=True)
-    data = [None]*len(h5files)
+    data = [None] * len(h5files)
     for i in range(0, len(h5files)):
         data[i] = create_dataset(h5files[i], full_align, check_fpd)
         outpath = os.path.join(processed_data_path, h5files[i].split('/')[-3], h5files[i].split('/')[-2])
@@ -142,4 +137,4 @@ def preprocess(datadir, processed_data_path=".", full_align=False, check_fpd=Tru
             os.makedirs(outpath)
         outfile = outpath + '/' + h5files[i].split('/')[-1][:-5] + '_Processed.hdf5'
         save_results(outfile, data[i])
-    return        
+    return

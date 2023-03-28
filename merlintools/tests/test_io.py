@@ -19,8 +19,10 @@ import pandas
 
 merlin_path = os.path.dirname(merlintools.__file__)
 
+
 class TestMIBConversion:
     """Test MIB conversion functionality."""
+
     def test_no_scan_file(self):
         datadir = os.path.join(merlin_path, "tests", "test_data", "No-Scan")
         mib = glob.glob(datadir + '/*.mib')
@@ -29,8 +31,8 @@ class TestMIBConversion:
         ser = glob.glob(datadir + '/*.ser')
         dm = glob.glob(datadir + '/*.dm*')
         mb = merlintools.preprocessing.get_merlin_binary(mib, hdr, emi, ser, dm)
-        assert mb.shape == (1,256,256,256)
-    
+        assert mb.shape == (1, 256, 256, 256)
+
     def test_dm_scan_missing_frames(self):
         datadir = os.path.join(merlin_path, "tests", "test_data", "DM-Scan_MissingFrames")
         mib = glob.glob(datadir + '/*.mib')
@@ -39,8 +41,8 @@ class TestMIBConversion:
         ser = glob.glob(datadir + '/*.ser')
         dm = glob.glob(datadir + '/*.dm*')
         mb = merlintools.preprocessing.get_merlin_binary(mib, hdr, emi, ser, dm)
-        assert mb.shape == (16,16,256,256)
-    
+        assert mb.shape == (16, 16, 256, 256)
+
     def test_dm_scan_extra_frames(self):
         datadir = os.path.join(merlin_path, "tests", "test_data", "DM-Scan_ExtraFrames")
         mib = glob.glob(datadir + '/*.mib')
@@ -49,8 +51,8 @@ class TestMIBConversion:
         ser = glob.glob(datadir + '/*.ser')
         dm = glob.glob(datadir + '/*.dm*')
         mb = merlintools.preprocessing.get_merlin_binary(mib, hdr, emi, ser, dm)
-        assert mb.shape == (16,16,256,256)
-    
+        assert mb.shape == (16, 16, 256, 256)
+
     def test_tia_scan(self):
         datadir = os.path.join(merlin_path, "tests", "test_data", "TIA-Scan")
         mib = glob.glob(datadir + '/*.mib')
@@ -59,7 +61,8 @@ class TestMIBConversion:
         ser = glob.glob(datadir + '/*.ser')
         dm = glob.glob(datadir + '/*.dm*')
         mb = merlintools.preprocessing.get_merlin_binary(mib, hdr, emi, ser, dm)
-        assert mb.shape == (16,16,256,256)
+        assert mb.shape == (16, 16, 256, 256)
+
 
 class TestGetMicroscopeParameters:
     def test_tia_scope_parameters_filename(self):
@@ -88,11 +91,11 @@ class TestGetMicroscopeParameters:
         dm = glob.glob(datadir + '/*.dm*')
         mb = merlintools.preprocessing.get_merlin_binary(mib, hdr, emi, ser, dm)
         mb.write_hdf5(h5filename)
-        with h5py.File(h5filename,'r') as h5:
+        with h5py.File(h5filename, 'r') as h5:
             params = merlintools.io.get_microscope_parameters(h5)
         temp_dir.cleanup()
         assert params['HT'] == 200.0
-    
+
     def test_tia_scope_parameters_nt(self):
         temp_dir = TemporaryDirectory()
         h5filename = temp_dir.name + "tempfile.hdf5"
@@ -135,11 +138,11 @@ class TestGetMicroscopeParameters:
         dm = glob.glob(datadir + '/*.dm*')
         mb = merlintools.preprocessing.get_merlin_binary(mib, hdr, emi, ser, dm)
         mb.write_hdf5(h5filename)
-        with h5py.File(h5filename,'r') as h5:
+        with h5py.File(h5filename, 'r') as h5:
             params = merlintools.io.get_microscope_parameters(h5)
         temp_dir.cleanup()
         assert params['HT'] == 200.0
-    
+
     def test_dm_scope_parameters_nt(self):
         temp_dir = TemporaryDirectory()
         h5filename = temp_dir.name + "tempfile.hdf5"
@@ -156,19 +159,21 @@ class TestGetMicroscopeParameters:
         temp_dir.cleanup()
         assert params['HT'] == 200.0
 
+
 class TestGetMerlinParameters:
     def test_get_merlin_parameters_string(self):
         h5file = os.path.join(merlin_path, "tests", "test_data",
                               "FPD_HDF5.hdf5")
         params = merlintools.io.get_merlin_parameters(h5file)
         assert params['Detector shape'] == [256, 256]
-    
+
     def test_get_merlin_parameters_h5(self):
         h5file = os.path.join(merlin_path, "tests", "test_data",
                               "FPD_HDF5.hdf5")
-        with h5py.File(h5file,'r') as h5:
+        with h5py.File(h5file, 'r') as h5:
             params = merlintools.io.get_merlin_parameters(h5)
         assert params['Detector shape'] == [256, 256]
+
 
 class TestHeaderParsing:
     """Test header parsing functionality."""
@@ -193,6 +198,7 @@ class TestHeaderParsing:
         assert 'ExtCounterDepth' in header.keys()
         assert header['DataOffset'] == 384
 
+
 class TestReadSingleMIB:
 
     def test_load_single_mib(self):
@@ -201,13 +207,15 @@ class TestReadSingleMIB:
         mibfile = merlintools.io.read_single_mib(mibfile)
         assert isinstance(mibfile, np.ndarray)
 
+
 class TestOtherIOFunctions:
     def test_get_experimental_parameters(self):
         rootpath = os.path.join(merlin_path, "tests", "test_data", "Archive-Directory")
-        df = merlintools.io.get_experimental_parameters(rootpath + '/')
+        h5files = glob.glob(rootpath + "/*/*.hdf5")
+        df = merlintools.io.get_experimental_parameters(h5files)
         assert isinstance(df, pandas.DataFrame)
         assert df['Beam Energy'][0] == 200.0
-    
+
     def test_get_axes_dict(self):
         h5filename = os.path.join(merlin_path, "tests", "test_data", "FPD_HDF5.hdf5")
         nt = fpdf.fpd_to_tuple(h5filename)

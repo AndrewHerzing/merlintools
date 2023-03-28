@@ -17,6 +17,7 @@ from scipy import ndimage, optimize
 import matplotlib.pylab as plt
 from merlintools import color
 
+
 def radial_profile(ds, center_yx, recip_calib=None, crop=True, spf=1.0):
     """
     Calculate radial profile for a 4D dataset.
@@ -81,6 +82,7 @@ def radial_profile(ds, center_yx, recip_calib=None, crop=True, spf=1.0):
                 radial[i, j] = res[i, j][1]
     return bins, radial
 
+
 def shift_align(ds, shifts, nr=16, nc=16, sub_pixel=True, interpolation=3):
     """
     Align data given shift array.
@@ -109,13 +111,14 @@ def shift_align(ds, shifts, nr=16, nc=16, sub_pixel=True, interpolation=3):
             interpolation = 0
         new_im = ndimage.shift(image, -syx, order=interpolation)
         return new_im
-    
+
     ali = fpdp.map_image_function(ds, nr, nc, func=ali_func,
                                   mapped_params={'shift_array': np.moveaxis(shifts, 0, -1)},
                                   params={'sub_pixel': sub_pixel,
                                           'interpolation': interpolation})
     ali = ali.T.reshape(ds.shape)
     return ali
+
 
 def align_merlin(h5filename, sub_pixel=True, interpolation=3,
                  apply_threshold=True, apply_mask=True, output_path=None):
@@ -144,7 +147,7 @@ def align_merlin(h5filename, sub_pixel=True, interpolation=3,
 
     """
     def shift_func(image, scanYind, scanXind, shift_array, sub_pixel=True,
-               interpolation=3):
+                   interpolation=3):
         if sub_pixel:
             syx = shift_array[:, scanYind, scanXind]
         else:
@@ -297,7 +300,7 @@ def get_max_dps(data_4d, image, n_pix=100):
     """
     dps = np.zeros([n_pix, data_4d.shape[2], data_4d.shape[3]])
     max_locs = image.ravel().argsort()[::-1]
-    locs = [None]*n_pix
+    locs = [None] * n_pix
     for i in range(0, n_pix):
         row, col = np.unravel_index(max_locs[i], data_4d.shape[0:2])
         locs[i] = [row, col]
@@ -305,6 +308,7 @@ def get_max_dps(data_4d, image, n_pix=100):
 
     dps = hs.signals.Signal2D(dps)
     return dps, locs
+
 
 def get_min_dps(data_4d, image, n_pix=100):
     """
@@ -329,7 +333,7 @@ def get_min_dps(data_4d, image, n_pix=100):
     """
     dps = np.zeros([n_pix, data_4d.shape[2], data_4d.shape[3]])
     min_locs = image.ravel().argsort()
-    locs = [None]*n_pix
+    locs = [None] * n_pix
     for i in range(0, n_pix):
         row, col = np.unravel_index(min_locs[i], data_4d.shape[0:2])
         locs[i] = [row, col]
@@ -337,6 +341,7 @@ def get_min_dps(data_4d, image, n_pix=100):
 
     dps = hs.signals.Signal2D(dps)
     return dps, locs
+
 
 def get_virtual_images(data4d, com_yx, apertures, sub_pixel=True, nr=128, nc=128):
     """
@@ -365,21 +370,21 @@ def get_virtual_images(data4d, com_yx, apertures, sub_pixel=True, nr=128, nc=128
 
     def f_pixel(image, mask, shift):
         mask_shifted = np.zeros_like(mask)
-        mask_shifted = [ndimage.shift(mask[i], shift, order=0) for i in range(0,mask.shape[0])]
+        mask_shifted = [ndimage.shift(mask[i], shift, order=0) for i in range(0, mask.shape[0])]
         res = (image * mask_shifted)
         return res
-    
+
     def f_subpixel(image, mask, shift):
         mask_shifted = np.zeros_like(mask)
-        mask_shifted = [ndimage.shift(mask[i], shift, order=3) for i in range(0,mask.shape[0])]
+        mask_shifted = [ndimage.shift(mask[i], shift, order=3) for i in range(0, mask.shape[0])]
         res = (image * mask_shifted)
         return res
-    
+
     scanY, scanX, detY, detX = data4d.shape
-    center_yx = np.array(data4d.shape[-2:])/2
+    center_yx = np.array(data4d.shape[-2:]) / 2
 
     n_apts = apertures.shape[0]
-    
+
     com_shifts = np.moveaxis(com_yx, 0, -1) - center_yx
 
     if not sub_pixel:
@@ -394,8 +399,9 @@ def get_virtual_images(data4d, com_yx, apertures, sub_pixel=True, nr=128, nc=128
                                            params={'mask': apertures},
                                            mapped_params={'shift': com_shifts})
 
-    v_images = v_images.reshape([n_apts, detY, detX, scanY, scanX]).sum((1,2))
+    v_images = v_images.reshape([n_apts, detY, detX, scanY, scanX]).sum((1, 2))
     return v_images
+
 
 def get_q_images(data, q_ranges):
     """
@@ -417,11 +423,13 @@ def get_q_images(data, q_ranges):
         q_ranges = [q_ranges]
     ims = np.array(np.zeros([len(q_ranges), data['radial_profile'][1].shape[0],
                              data['radial_profile'][1].shape[1]]))
-    
+
     for i in range(0, len(q_ranges)):
-        idx = np.where(np.logical_and(data['radial_profile'][0] > q_ranges[i][0], data['radial_profile'][0] < q_ranges[i][1]))[0]
-        ims[i] = data['radial_profile'][1][:,:,idx].sum(2)
+        idx = np.where(np.logical_and(data['radial_profile'][0] > q_ranges[i]
+                       [0], data['radial_profile'][0] < q_ranges[i][1]))[0]
+        ims[i] = data['radial_profile'][1][:, :, idx].sum(2)
     return ims
+
 
 def remove_bckg(data, q_range, scanYX=None, plot_result=False, model='power'):
     """
@@ -453,31 +461,31 @@ def remove_bckg(data, q_range, scanYX=None, plot_result=False, model='power'):
     >>> corrected = merlin.processing.remove_bckg(data['radial_profile'], [0.5,1.3])
     """
     def _pl_func(x, A, r):
-        return A*x**-r
-    
+        return A * x**-r
+
     def _poly_func(x, a4, a3, a2, a1, c):
-        return a4*x**4 + a3*x**3 + a2*x**2 + a1*x + c
-    
+        return a4 * x**4 + a3 * x**3 + a2 * x**2 + a1 * x + c
+
     xaxis = data['radial_profile'][0]
     if scanYX is None:
-        yaxis = data['radial_profile'][1].sum((0,1))
+        yaxis = data['radial_profile'][1].sum((0, 1))
     else:
         yaxis = data['radial_profile'][1][scanYX[0], scanYX[1], :]
-    fit_range=[np.where(xaxis > q_range[0])[0][0], np.where(xaxis>q_range[1])[0][0]]
-    if model.lower() in ['power','pl']:
+    fit_range = [np.where(xaxis > q_range[0])[0][0], np.where(xaxis > q_range[1])[0][0]]
+    if model.lower() in ['power', 'pl']:
         res, cov = optimize.curve_fit(_pl_func, xaxis[fit_range[0]:fit_range[1]], yaxis[fit_range[0]:fit_range[1]])
         fit = _pl_func(xaxis[fit_range[0]:], res[0], res[1])
-    elif model.lower() in ['poly',]:
+    elif model.lower() in ['poly', ]:
         res, cov = optimize.curve_fit(_poly_func, xaxis[fit_range[0]:fit_range[1]], yaxis[fit_range[0]:fit_range[1]])
         fit = _poly_func(xaxis[fit_range[0]:], res[0], res[1], res[2], res[3], res[4])
-    
+
     corrected = yaxis[fit_range[0]:] - fit
-    
+
     if plot_result:
         plt.figure()
         plt.plot(xaxis[fit_range[0]:], yaxis[fit_range[0]:], 'ro', label='Data')
         plt.plot(xaxis[fit_range[0]:], fit, 'blue', label='Fit')
         plt.plot(xaxis[fit_range[0]:], corrected, 'go', label='Corrected')
         plt.legend()
-    
+
     return corrected

@@ -8,33 +8,35 @@ from scipy.optimize import curve_fit
 from matplotlib.patches import Wedge
 import fpd.fpd_processing as fpdp
 
+
 class RingPatternCalibration:
-    
+
     def __init__(self, data, material='AuPd'):
         self.data = data
         self.hkls = get_lattice_spacings(material)
-    
+
     def find_center(self, mask_radius=50, plot_result=False):
-        apt = fpdp.virtual_apertures(self.data.shape, (128,128), (0,mask_radius))
-        self.comyx = fpdp.center_of_mass(self.data[np.newaxis,np.newaxis,:,:], aperture=apt,
-                                         nr=16, nc=16, print_stats=False)[:,0,0]
+        apt = fpdp.virtual_apertures(
+            self.data.shape, (128, 128), (0, mask_radius))
+        self.comyx = fpdp.center_of_mass(self.data[np.newaxis, np.newaxis, :, :], aperture=apt,
+                                         nr=16, nc=16, print_stats=False)[:, 0, 0]
         if plot_result:
             plt.figure()
-            plt.imshow(np.log(self.data+1), cmap='inferno')
+            plt.imshow(np.log(self.data + 1), cmap='inferno')
             plt.gca().scatter(self.comyx[1], self.comyx[0])
 
     def get_qrange(self, radii, ylim=None, xlim=None):
         self.q_range = radii
-        fig, ax = plt.subplots(1,2, figsize=(9,5),
+        fig, ax = plt.subplots(1, 2, figsize=(9, 5),
                                gridspec_kw={'width_ratios': [1, 2]})
-        
-        ax[0].imshow(np.log(self.data+1), cmap='gray')
+
+        ax[0].imshow(np.log(self.data + 1), cmap='gray')
         annulus = Wedge((self.comyx[1], self.comyx[0]),
-                        radii[1], 0, 360, width=(radii[1]-radii[0]),
+                        radii[1], 0, 360, width=(radii[1] - radii[0]),
                         alpha=0.3, color='red')
         ax[0].add_patch(annulus)
         ax[0].axis('off')
-        
+
         ax[1].scatter(self.radial[0], self.radial[1])
         if ylim is None:
             pass
@@ -47,35 +49,36 @@ class RingPatternCalibration:
         ax[1].axvline(self.q_range[0], linestyle='--', color='red')
         ax[1].axvline(self.q_range[1], linestyle='--', color='red')
         plt.tight_layout()
-    
+
     def radial_profile(self, spf=3):
         self.radial = fpdp.radial_profile(self.data, cyx=self.comyx, spf=spf)
-    
-    def fit_peak(self, peak_hkl, plot_result=False): 
+
+    def fit_peak(self, peak_hkl, plot_result=False):
         def _gaussian(x, A, mu, sigma):
-            return A*np.exp(-0.5*((x-mu)/sigma)**2)
-        
-        idx = np.where(np.logical_and(self.radial[0]>=self.q_range[0],
-                                      self.radial[0]<self.q_range[1]))
+            return A * np.exp(-0.5 * ((x - mu) / sigma)**2)
+
+        idx = np.where(np.logical_and(self.radial[0] >= self.q_range[0],
+                                      self.radial[0] < self.q_range[1]))
         _x = self.radial[0][idx]
         _y = self.radial[1][idx]
-        _y = self.radial[1][idx]/np.max(self.radial[1][idx])
+        _y = self.radial[1][idx] / np.max(self.radial[1][idx])
 
-        p0 = [np.max(_y), _x[np.where(_y==np.max(_y))][0], 1.]
+        p0 = [np.max(_y), _x[np.where(_y == np.max(_y))][0], 1.]
 
-        popt,pcov = curve_fit(_gaussian,_x,_y,p0=p0)
-        self.A,self.mu,self.sigma = np.max(self.radial[1][idx])*popt[0],popt[1],popt[2]
-        
-        self.calibration = (1/self.hkls[peak_hkl])/self.mu
+        popt, pcov = curve_fit(_gaussian, _x, _y, p0=p0)
+        self.A, self.mu, self.sigma = np.max(
+            self.radial[1][idx]) * popt[0], popt[1], popt[2]
+
+        self.calibration = (1 / self.hkls[peak_hkl]) / self.mu
         if plot_result:
-            fig,ax = plt.subplots(1)
+            fig, ax = plt.subplots(1)
             ax.scatter(self.radial[0], self.radial[1])
-            ax.set_ylim(0,600)
-            ax.set_xlim(0,140)
+            ax.set_ylim(0, 600)
+            ax.set_xlim(0, 140)
             ax.axvline(self.mu, linestyle='--', color='red')
-    
+
     def check_results(self, ylim=None, xlim=None):
-        fig,ax = plt.subplots(1)
+        fig, ax = plt.subplots(1)
         ax.scatter(self.radial[0], self.radial[1])
         if ylim is None:
             pass
@@ -87,13 +90,14 @@ class RingPatternCalibration:
             ax.set_xlim(xlim[0], xlim[1])
 
         for i in self.hkls.keys():
-            k = 1/self.hkls[i]
-            ax.axvline(k/self.calibration, linestyle='--', color='red')
+            k = 1 / self.hkls[i]
+            ax.axvline(k / self.calibration, linestyle='--', color='red')
+
 
 class CalibrationObject:
     """
     Class to perform calibrations using py4DSTEM.
-    
+
     Adapted from ACOM_03_Au_NP_sim.ipynb on https://github.com/py4dstem/py4DSTEM_tutorials
 
     Attributes
@@ -109,9 +113,9 @@ class CalibrationObject:
     qR : float
         Radius of the transmitted disc in pixels
     qx0, qy0 : float
-        Center of transmitted disc in pixels 
+        Center of transmitted disc in pixels
     """
-    
+
     def __init__(self):
         self.filename = None
         self.datacube = None
@@ -120,7 +124,7 @@ class CalibrationObject:
         self.qR = None
         self.qx0 = None
         self.qy0 = None
-        
+
     def load_calibration_data(self, h5file):
         """
         Load a 4D STEM dataset stored via FPD
@@ -132,15 +136,16 @@ class CalibrationObject:
 
         """
         self.filename = h5file
-        with h5py.File(h5file,'r') as h5:
-            self.datacube = py4DSTEM.io.DataCube(h5['fpd_expt/fpd_data/data'][...])
+        with h5py.File(h5file, 'r') as h5:
+            self.datacube = py4DSTEM.io.DataCube(
+                h5['fpd_expt/fpd_data/data'][...])
 
         self.coordinates = py4DSTEM.io.datastructure.Coordinates(
-        self.datacube.R_Nx,
-        self.datacube.R_Ny,
-        self.datacube.Q_Nx,
-        self.datacube.Q_Nx,
-        name='coordinates_AuPd')
+            self.datacube.R_Nx,
+            self.datacube.R_Ny,
+            self.datacube.Q_Nx,
+            self.datacube.Q_Nx,
+            name='coordinates_AuPd')
 
     def get_probe_size(self, plot_results=True):
         """
@@ -152,22 +157,25 @@ class CalibrationObject:
             If True, plot probe image along with virtual bright- and dark-field images
 
         """
-        sum_image = self.datacube.data[:,:,0:50,0:50].sum((2,3))
+        sum_image = self.datacube.data[:, :, 0:50, 0:50].sum((2, 3))
         [miny, minx] = np.unravel_index(np.argmin(sum_image), sum_image.shape)
         self.probe_template = self.datacube.data[miny, minx, :, :]
 
-        dp_max = np.max(self.datacube.data, axis=(0,1))
-        self.qR, self.qx0, self.qy0 = py4DSTEM.process.calibration.get_probe_size(self.probe_template, thresh_lower=0.1, thresh_upper=0.9)
+        # dp_max = np.max(self.datacube.data, axis=(0, 1))
+        self.qR, self.qx0, self.qy0 = py4DSTEM.process.calibration.get_probe_size(
+            self.probe_template, thresh_lower=0.1, thresh_upper=0.9)
 
-        bf_mask = py4DSTEM.process.virtualimage.make_circ_mask(self.datacube, ((self.qx0, self.qy0),self.qR))
-        self.BF = (self.datacube.data * bf_mask).sum((2,3))
+        bf_mask = py4DSTEM.process.virtualimage.make_circ_mask(
+            self.datacube, ((self.qx0, self.qy0), self.qR))
+        self.BF = (self.datacube.data * bf_mask).sum((2, 3))
 
-        adf_mask = py4DSTEM.process.virtualimage.make_annular_mask(self.datacube, ((self.qx0,self.qy0),(5*self.qR,10*self.qR)))
-        self.ADF = (self.datacube.data * adf_mask).sum((2,3))
-        
+        adf_mask = py4DSTEM.process.virtualimage.make_annular_mask(
+            self.datacube, ((self.qx0, self.qy0), (5 * self.qR, 10 * self.qR)))
+        self.ADF = (self.datacube.data * adf_mask).sum((2, 3))
+
         if plot_results:
-            fig,ax = plt.subplots(1,3,figsize=(12,4))
-            ax[0].imshow(np.log(self.probe_template+1))
+            fig, ax = plt.subplots(1, 3, figsize=(12, 4))
+            ax[0].imshow(np.log(self.probe_template + 1))
             ax[0].set_title('Probe')
             ax[1].imshow(self.BF)
             ax[1].set_title('BF')
@@ -185,9 +193,11 @@ class CalibrationObject:
 
         """
 
-        self.qx0_meas, self.qy0_meas = py4DSTEM.process.calibration.get_origin(self.datacube)
+        self.qx0_meas, self.qy0_meas = py4DSTEM.process.calibration.get_origin(
+            self.datacube)
         if plot_results:
-            py4DSTEM.visualize.show_image_grid(get_ar=lambda i:[self.qx0_meas,self.qy0_meas][i],H=1,W=2,cmap='RdBu')
+            py4DSTEM.visualize.show_image_grid(
+                get_ar=lambda i: [self.qx0_meas, self.qy0_meas][i], H=1, W=2, cmap='RdBu')
 
     def fit_q(self, plot_results=False):
         """
@@ -199,19 +209,19 @@ class CalibrationObject:
             If True, plot results of fit
 
         """
-        self.qx0_fit,self.qy0_fit,self.qx0_residuals,self.qy0_residuals = py4DSTEM.process.calibration.fit_origin(
+        self.qx0_fit, self.qy0_fit, self.qx0_residuals, self.qy0_residuals = py4DSTEM.process.calibration.fit_origin(
             self.qx0_meas,
             self.qy0_meas,
             fitfunction='plane',
             robust=True)
         if plot_results:
             py4DSTEM.visualize.show_image_grid(
-                lambda i:[self.qx0_meas,self.qx0_fit,self.qx0_residuals,
-                          self.qy0_meas,self.qy0_fit,self.qy0_residuals][i],
-                H=2,W=3,cmap='RdBu')
+                lambda i: [self.qx0_meas, self.qx0_fit, self.qx0_residuals,
+                           self.qy0_meas, self.qy0_fit, self.qy0_residuals][i],
+                H=2, W=3, cmap='RdBu')
 
         # Store the origin position
-        self.coordinates.set_origin(self.qx0_fit,self.qy0_fit)
+        self.coordinates.set_origin(self.qx0_fit, self.qy0_fit)
 
     def make_probe_template(self, plot_results=False):
         """
@@ -223,13 +233,13 @@ class CalibrationObject:
             If True, plot the kernel
 
         """
-        self.probe_kernel = py4DSTEM.process.diskdetection.get_probe_kernel_edge_sigmoid(                            
+        self.probe_kernel = py4DSTEM.process.diskdetection.get_probe_kernel_edge_sigmoid(
             self.probe_template,
-            self.qR*0.0,
-            self.qR*4.0,
-            origin=(self.qx0,self.qy0))
+            self.qR * 0.0,
+            self.qR * 4.0,
+            origin=(self.qx0, self.qy0))
         if plot_results:
-            py4DSTEM.visualize.show_kernel(self.probe_kernel,R=20,L=40,W=2)
+            py4DSTEM.visualize.show_kernel(self.probe_kernel, R=20, L=40, W=2)
 
     def get_points(self):
         """
@@ -237,15 +247,17 @@ class CalibrationObject:
 
         """
         # Select a few DPs on which to test disk detection parameters
-        idx = np.unravel_index(np.argsort(self.ADF.flatten())[-5:], self.ADF.shape)
+        idx = np.unravel_index(np.argsort(
+            self.ADF.flatten())[-5:], self.ADF.shape)
 
         rxs_cal = idx[1][0:3]
         rys_cal = idx[0][0:3]
-        colors = ['r','c','g']
-        
-        py4DSTEM.visualize.show_points(self.ADF,x=rxs_cal,y=rys_cal,pointcolor=colors,figsize=(8,8))
-            # py4DSTEM.visualize.show_image_grid(get_ar=lambda i:self.datacube.data[rxs_cal[i],rys_cal[i],:,:],
-            #                                    H=1,W=3,get_bordercolor=lambda i:colors[i],scaling='log')
+        colors = ['r', 'c', 'g']
+
+        py4DSTEM.visualize.show_points(
+            self.ADF, x=rxs_cal, y=rys_cal, pointcolor=colors, figsize=(8, 8))
+        # py4DSTEM.visualize.show_image_grid(get_ar=lambda i:self.datacube.data[rxs_cal[i],rys_cal[i],:,:],
+        #                                    H=1,W=3,get_bordercolor=lambda i:colors[i],scaling='log')
         self.rxs = rxs_cal
         self.rys = rys_cal
 
@@ -258,13 +270,13 @@ class CalibrationObject:
 
         Parameters
         ----------
-        Parameters defined in :func:`~py4DSTEM.process.diskdetection.find_Bragg_disks_selected` 
+        Parameters defined in :func:`~py4DSTEM.process.diskdetection.find_Bragg_disks_selected`
 
         """
-        
-        colors = ['r','c','g']
+
+        colors = ['r', 'c', 'g']
         self.get_points()
-        selected_peaks = py4DSTEM.process.diskdetection.find_Bragg_disks_selected(        
+        selected_peaks = py4DSTEM.process.diskdetection.find_Bragg_disks_selected(
             datacube=self.datacube,
             probe=self.probe_kernel,
             Rx=self.rxs,
@@ -281,17 +293,17 @@ class CalibrationObject:
         )
 
         py4DSTEM.visualize.show_image_grid(
-            get_ar=lambda i:self.datacube.data[self.rxs[i],self.rys[i],:,:],H=1,W=3,
-            get_bordercolor=lambda i:colors[i],
-            get_x=lambda i:selected_peaks[i].data['qx'],
-            get_y=lambda i:selected_peaks[i].data['qy'],
-            get_pointcolors=lambda i:colors[i],
+            get_ar=lambda i: self.datacube.data[self.rxs[i], self.rys[i], :, :], H=1, W=3,
+            get_bordercolor=lambda i: colors[i],
+            get_x=lambda i: selected_peaks[i].data['qx'],
+            get_y=lambda i: selected_peaks[i].data['qy'],
+            get_pointcolors=lambda i: colors[i],
             scaling='log',
             power=1,
             clipvals='manual',
             min=0,
             max=200,
-            )
+        )
         self.corrPower = corrPower
         self.sigma = sigma
         self.edgeBoundary = edgeBoundary
@@ -323,14 +335,16 @@ class CalibrationObject:
         )
 
         # Center the disk positions about the origin
-        self.braggpeaks_centered = py4DSTEM.process.calibration.center_braggpeaks(self.braggpeaks_raw,coords=self.coordinates)
+        self.braggpeaks_centered = py4DSTEM.process.calibration.center_braggpeaks(
+            self.braggpeaks_raw, coords=self.coordinates)
 
     def get_bvm(self):
         """
         Calculate Bragg vector map
 
         """
-        self.bvm_cal = py4DSTEM.process.diskdetection.get_bvm(self.braggpeaks_centered,self.datacube.Q_Nx,self.datacube.Q_Ny)
+        self.bvm_cal = py4DSTEM.process.diskdetection.get_bvm(
+            self.braggpeaks_centered, self.datacube.Q_Nx, self.datacube.Q_Ny)
 
         # Plot the Bragg vector map
         py4DSTEM.visualize.show(
@@ -351,9 +365,9 @@ class CalibrationObject:
             region is plotted over the Bragg vector map iteratively until optimal
 
         """
-        py4DSTEM.visualize.show(self.bvm_cal,cmap='gray',scaling='power',power=0.5,clipvals='manual',min=0,max=100,
-                                annulus={'center':(self.datacube.Q_Nx/2.,self.datacube.Q_Ny/2.),
-                                'Ri':qrange[0],'Ro':qrange[1],'fill':True,'color':'y','alpha':0.5})
+        py4DSTEM.visualize.show(self.bvm_cal, cmap='gray', scaling='power', power=0.5, clipvals='manual', min=0, max=100,
+                                annulus={'center': (self.datacube.Q_Nx / 2., self.datacube.Q_Ny / 2.),
+                                         'Ri': qrange[0], 'Ro': qrange[1], 'fill': True, 'color': 'y', 'alpha': 0.5})
         self.qrange = qrange
 
     def correct_elliptical_distortion(self, plot_result=False):
@@ -367,18 +381,18 @@ class CalibrationObject:
 
         """
         # Fit the elliptical distortions
-        qx0,qy0,a,e,theta = py4DSTEM.process.calibration.fit_ellipse_1D(
-                                self.bvm_cal,(self.datacube.Q_Nx/2.,self.datacube.Q_Ny/2.), self.qrange)
+        qx0, qy0, a, e, theta = py4DSTEM.process.calibration.fit_ellipse_1D(
+            self.bvm_cal, (self.datacube.Q_Nx / 2., self.datacube.Q_Ny / 2.), self.qrange)
 
         # Save to Coordinates
-        self.coordinates.set_ellipse(a,e,theta)
+        self.coordinates.set_ellipse(a, e, theta)
 
         # Confirm that elliptical distortions have been removed
 
         # Correct bragg peak positions, stretching the elliptical semiminor axis to match the semimajor axis length
         braggpeaks_ellipsecorr = py4DSTEM.process.calibration.correct_braggpeak_elliptical_distortions(
             self.braggpeaks_centered,
-            (qx0,qy0,a,e,theta),
+            (qx0, qy0, a, e, theta),
         )
 
         # Recompute the bvm
@@ -388,18 +402,19 @@ class CalibrationObject:
             self.datacube.Q_Ny)
 
         # Fit an ellipse to the elliptically corrected bvm
-        qmin= self.qrange[0] 
-        qmax= self.qrange[1]
-        qx0_corr,qy0_corr,a_corr,e_corr,theta_corr = py4DSTEM.process.calibration.fit_ellipse_1D(bvm_ellipsecorr,(qx0,qy0),(qmin,qmax))
+        qmin = self.qrange[0]
+        qmax = self.qrange[1]
+        qx0_corr, qy0_corr, a_corr, e_corr, theta_corr = py4DSTEM.process.calibration.fit_ellipse_1D(
+            bvm_ellipsecorr, (qx0, qy0), (qmin, qmax))
 
         if plot_result:
             py4DSTEM.visualize.show_elliptical_fit(
                 self.bvm_cal,
                 self.qrange,
-                (qx0_corr,qy0_corr,a_corr,e_corr,theta_corr),
+                (qx0_corr, qy0_corr, a_corr, e_corr, theta_corr),
                 cmap='gray',
                 scaling='power',
-                power=0.5,clipvals='manual',
+                power=0.5, clipvals='manual',
                 min=0,
                 max=100,
                 fill=True)
@@ -407,10 +422,10 @@ class CalibrationObject:
         # Print the ratio of the semi-axes before and after correction
         print("The ratio of the semiminor to semimajor axes was measured to be")
         print("")
-        print("\t{:.2f}% in the original data and".format(100*e/a))
-        print("\t{:.2f}% in the corrected data.".format(100*e_corr/a_corr))
+        print("\t{:.2f}% in the original data and".format(100 * e / a))
+        print("\t{:.2f}% in the corrected data.".format(100 * e_corr / a_corr))
 
-        self.bvm_ellipsecorr =  bvm_ellipsecorr
+        self.bvm_ellipsecorr = bvm_ellipsecorr
         self.braggpeaks_ellipsecorr = braggpeaks_ellipsecorr
 
     def pixel_calibration(self, d_spacing_Ang=1.41, ymax=9e3, dq=0.25):
@@ -418,7 +433,7 @@ class CalibrationObject:
         Calibrate based on ellipitcally corrected Bragg vector map.
 
         The Bragg vector map is first radially integrated. Then, peak used for elliptical correction
-        is fit with a Gaussian peak. The mean value of the fit is used to calibrate based on the 
+        is fit with a Gaussian peak. The mean value of the fit is used to calibrate based on the
         known d spacing. the Bragg vector map. The results of the fit are then plotted. A second plot
         is also shown that validates the calibration by indicating the positions of other peaks relative
         to those expected for the d-spacings.
@@ -434,29 +449,30 @@ class CalibrationObject:
 
 
         """
-        q,I_radial = py4DSTEM.process.utils.radial_integral(
-                                self.bvm_ellipsecorr,self.datacube.Q_Nx/2,self.datacube.Q_Ny/2,dr=dq)
+        q, I_radial = py4DSTEM.process.utils.radial_integral(
+            self.bvm_ellipsecorr, self.datacube.Q_Nx / 2, self.datacube.Q_Ny / 2, dr=dq)
 
         # Fit a gaussian to find a peak location
-        qmin,qmax = self.qrange
-        A,mu,sigma = py4DSTEM.process.fit.fit_1D_gaussian(q,I_radial,qmin,qmax)
-        inv_Ang_per_pixel = 1./(d_spacing_Ang * mu)
+        qmin, qmax = self.qrange
+        A, mu, sigma = py4DSTEM.process.fit.fit_1D_gaussian(
+            q, I_radial, qmin, qmax)
+        inv_Ang_per_pixel = 1. / (d_spacing_Ang * mu)
 
-        fig,ax = py4DSTEM.visualize.show_qprofile(q=q,intensity=I_radial,ymax=ymax,
-                                                  returnfig=True)
-        ax.vlines((qmin,qmax),0,ax.get_ylim()[1],color='r')
-        ax.vlines(mu,0,ax.get_ylim()[1],color='g')
-        ax.plot(q,py4DSTEM.process.fit.gaussian(q,A,mu,sigma),color='r')
+        fig, ax = py4DSTEM.visualize.show_qprofile(q=q, intensity=I_radial, ymax=ymax,
+                                                   returnfig=True)
+        ax.vlines((qmin, qmax), 0, ax.get_ylim()[1], color='r')
+        ax.vlines(mu, 0, ax.get_ylim()[1], color='g')
+        ax.plot(q, py4DSTEM.process.fit.gaussian(q, A, mu, sigma), color='r')
 
-        ## Demonstrate consistency with known Au spacings
+        # Demonstrate consistency with known Au spacings
         spacings_Ang = np.array(list(get_lattice_spacings('AuPd').values()))
-        spacings_inv_Ang = 1./spacings_Ang
+        spacings_inv_Ang = 1. / spacings_Ang
 
-        fig,ax = py4DSTEM.visualize.show_qprofile(q=q*inv_Ang_per_pixel,intensity=I_radial,
-                                         ymax=ymax,xlabel='q (1/Ang)',returnfig=True)
-        ax.vlines(spacings_inv_Ang,0,ax.get_ylim()[1],color='r')
+        fig, ax = py4DSTEM.visualize.show_qprofile(q=q * inv_Ang_per_pixel, intensity=I_radial,
+                                                   ymax=ymax, xlabel='q (1/Ang)', returnfig=True)
+        ax.vlines(spacings_inv_Ang, 0, ax.get_ylim()[1], color='r')
         self.inv_Ang_per_pixel = inv_Ang_per_pixel
-        self.q_calibration = q*inv_Ang_per_pixel
+        self.q_calibration = q * inv_Ang_per_pixel
         self.I_calibration = I_radial
 
     def update_calibration(self):
@@ -468,8 +484,9 @@ class CalibrationObject:
         self.coordinates.set_Q_pixel_size(self.inv_Ang_per_pixel)
         self.coordinates.set_Q_pixel_units(r'Å$^{-1}$')
 
-        self.bragg_peaks_calibrated = py4DSTEM.process.calibration.calibrate_Bragg_peaks_pixel_size(self.braggpeaks_ellipsecorr, coords=self.coordinates)
-        
+        self.bragg_peaks_calibrated = py4DSTEM.process.calibration.calibrate_Bragg_peaks_pixel_size(
+            self.braggpeaks_ellipsecorr, coords=self.coordinates)
+
     def save_results_hspy(self, outfilename):
         """
         Save calibrated Bragg vector map and radial intergration data to Hyperspy signals.
@@ -488,7 +505,7 @@ class CalibrationObject:
         bvm.axes_manager[1].scale = self.inv_Ang_per_pixel
         bvm.axes_manager[1].units = r'Å$^{-1}$'
         bvm.axes_manager[1].name = 'qy'
-        bvm.axes_manager[1].offset = -128*self.inv_Ang_per_pixel
+        bvm.axes_manager[1].offset = -128 * self.inv_Ang_per_pixel
         bvm.save(outfilename + "_BVM.hdf5")
 
         q = hs.signals.Signal1D(self.I_calibration)
@@ -508,14 +525,15 @@ class CalibrationObject:
         ----------
         outfilename : float
             File for saving results
-        """    
+        """
         with h5py.File(outfilename, 'w') as h5:
             h5.create_dataset('bvm', data=self.bvm_ellipsecorr)
             h5.create_dataset('q', data=self.q_calibration)
             h5.create_dataset('I', data=self.I_calibration)
             h5.create_dataset('calibration', data=self.inv_Ang_per_pixel)
-            
+
         return
+
 
 def load_calibration_results(h5filename):
     """
@@ -525,9 +543,9 @@ def load_calibration_results(h5filename):
     ----------
     h5filename : float
         File containing calibration results
-    """   
+    """
     cal = {}
     with h5py.File(h5filename) as h5:
-        for i in ['bvm','q','I','calibration']:
+        for i in ['bvm', 'q', 'I', 'calibration']:
             cal[i] = h5[i][...]
     return cal

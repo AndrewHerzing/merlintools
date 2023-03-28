@@ -57,8 +57,9 @@ def plot_most_intense_patterns(dataset, im, ndps=10, logscale=True):
     plt.tight_layout()
     return locs
 
+
 def plot_q_windows(data, q_ranges, log_scale=True, colors=None, alpha=0.5, center_lines=False,
-                   legend=False, figsize=(8,6)):
+                   legend=False, figsize=(8, 6)):
     """
     Display plot of data and q windows.
 
@@ -87,22 +88,25 @@ def plot_q_windows(data, q_ranges, log_scale=True, colors=None, alpha=0.5, cente
         Handle for plot
     """
     if colors is None:
-        colors = ['blue','green','purple','magenta','cyan','yellow','orange']
+        colors = ['blue', 'green', 'purple',
+                  'magenta', 'cyan', 'yellow', 'orange']
     if type(q_ranges) is not list:
         q_ranges = [q_ranges]
-    
+
     fig, ax = plt.subplots(1, figsize=figsize)
     if log_scale:
-        ax.semilogy(data['radial_profile'][0], data['radial_profile'][1].sum((0,1)),'ro')
+        ax.semilogy(data['radial_profile'][0],
+                    data['radial_profile'][1].sum((0, 1)), 'ro')
     else:
-        ax.plot(data['radial_profile'][0], data['radial_profile'][1].sum((0,1)),'ro')     
+        ax.plot(data['radial_profile'][0],
+                data['radial_profile'][1].sum((0, 1)), 'ro')
 
     ylim = ax.get_ylim()
-    
-    rois = [None]*len(q_ranges)
-    q_mid = [None]*len(q_ranges)
+
+    rois = [None] * len(q_ranges)
+    q_mid = [None] * len(q_ranges)
     for i in range(len(q_ranges)):
-        q_mid[i] = (q_ranges[i][1] + q_ranges[i][0])/2
+        q_mid[i] = (q_ranges[i][1] + q_ranges[i][0]) / 2
         if q_ranges[i][0] > 0.0:
             if data['qcal_units'] == 'A^-1':
                 patch_label = r'%.2f $\AA^{-1}$' % q_mid[i]
@@ -111,9 +115,9 @@ def plot_q_windows(data, q_ranges, log_scale=True, colors=None, alpha=0.5, cente
             else:
                 patch_label = r'%.2f $pixels^{-1}$' % q_mid[i]
         else:
-            patch_label = "BF"            
-        rois[i] = patches.Rectangle((q_ranges[i][0],ylim[0]), width=q_ranges[i][1] - q_ranges[i][0],
-                                    height=ylim[1]-ylim[0], alpha=alpha, color=colors[i],
+            patch_label = "BF"
+        rois[i] = patches.Rectangle((q_ranges[i][0], ylim[0]), width=q_ranges[i][1] - q_ranges[i][0],
+                                    height=ylim[1] - ylim[0], alpha=alpha, color=colors[i],
                                     label=patch_label)
         ax.add_patch(rois[i])
     if center_lines:
@@ -129,29 +133,30 @@ def plot_q_windows(data, q_ranges, log_scale=True, colors=None, alpha=0.5, cente
         ax.set_xlabel(r'q ($nm^{-1}$)')
     else:
         ax.set_xlabel(r'$pixels^{-1}$')
-    
+
     return fig
+
 
 def plot_q_images(data, crop=None, labels=None, figsize=None):
     nimages = len(data['images'])
     if labels is None:
-        labels = [None]*nimages
+        labels = [None] * nimages
         for i in range(0, len(labels)):
             if data['q_vals'][i] == 0.0:
                 labels[i] = 'BF'
             else:
                 labels[i] = ('q=%.2f A^-1' % data['q_vals'][i])
     if figsize is None:
-        figsize = (5*nimages, 5)
-    fig,ax = plt.subplots(1, nimages, figsize=figsize)
+        figsize = (5 * nimages, 5)
+    fig, ax = plt.subplots(1, nimages, figsize=figsize)
     for i in range(0, nimages):
-         if crop in ['dm', 'DM']:
-            ax[i].imshow(data['images'][i][:-1,1:], cmap='inferno')
-         if crop in ['tia', 'TIA']:
-            ax[i].imshow(data['images'][i][1:,:], cmap='inferno')
-         else:
-             ax[i].imshow(data['images'][i], cmap='inferno')
-         ax[i].set_title(labels[i])
+        if crop in ['dm', 'DM']:
+            ax[i].imshow(data['images'][i][:-1, 1:], cmap='inferno')
+        if crop in ['tia', 'TIA']:
+            ax[i].imshow(data['images'][i][1:, :], cmap='inferno')
+        else:
+            ax[i].imshow(data['images'][i], cmap='inferno')
+        ax[i].set_title(labels[i])
     [i.axis('off') for i in ax.reshape(-1)]
     if 'DM0' in data['data']['nt']._fields:
         _ = plt.suptitle('%s ; FOV: %.0f nm' % (data['data']['filename'].split('/')[-2],
@@ -162,6 +167,7 @@ def plot_q_images(data, crop=None, labels=None, figsize=None):
                                                 data['data']['xcal_units']))
     plt.tight_layout()
     return fig, ax
+
 
 def adjust_clim(figure, axis_number, clim):
     figure.axes[axis_number].get_images()[0].set_clim(clim)

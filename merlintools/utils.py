@@ -63,8 +63,9 @@ def get_lattice_spacings(material):
     elif material.lower() == 'asbestos':
         hkls = {'020': 8.98, '011': 4.87}
     else:
-        raise(ValueError, "Unknown material.  Must be 'Au-Pd', 'Au', or 'Si'")
+        raise ValueError("Unknown material.  Must be 'Au-Pd', 'Au', or 'Si'")
     return hkls
+
 
 def mrads_to_hkl(angle, voltage):
     """
@@ -394,18 +395,20 @@ def optimize_parameters(beam_energy, min_q, max_q):
               (cls[i], min_q / cals[i], max_q / cals[i]))
     return
 
+
 def load_calibration_file(beam_energy, camera_length, also_alpha_data=False):
     datapath = os.path.join(merlintools_path, "calibrations", "data", "%skV" % beam_energy)
     datafile = "CL_%smm.mib" % camera_length
-    dp = merlintools.io.read_single_mib(datapath + "/" + datafile, [256,256])
+    dp = merlintools.io.read_single_mib(datapath + "/" + datafile, [256, 256])
     if also_alpha_data:
         alpha_file = glob.glob(datapath + "/*110.mib")[0]
-        alpha = merlintools.io.read_single_mib(alpha_file, [256,256])
+        alpha = merlintools.io.read_single_mib(alpha_file, [256, 256])
         return dp, alpha
     else:
         return dp
 
-def get_2d_scattering_profile(Z, composition, q_range=[0,2], q_size=256, plot_result=False, figsize=(9,4)):
+
+def get_2d_scattering_profile(Z, composition, q_range=[0, 2], q_size=256, plot_result=False, figsize=(9, 4)):
     """
     Calculate a 2D scattering profile.
 
@@ -425,11 +428,11 @@ def get_2d_scattering_profile(Z, composition, q_range=[0,2], q_size=256, plot_re
         Size of figure if result is to be plotted
 
     """
-    def _interpolation_function(d,y,n):
-        x = np.arange(n) 
+    def _interpolation_function(d, y, n):
+        x = np.arange(n)
         f = interp1d(x, y)
         return f(d.flat).reshape(d.shape)
-    
+
     if type(Z) is not list:
         Z = [Z]
     if type(composition) is not list:
@@ -440,19 +443,20 @@ def get_2d_scattering_profile(Z, composition, q_range=[0,2], q_size=256, plot_re
     atom_sf = py4DSTEM.process.utils.single_atom_scatter(Z, composition, q, 'A')
     atom_sf.get_scattering_factor(Z, composition, q, 'A')
 
-    x,y = np.meshgrid(range(q_size), range(q_size))
+    x, y = np.meshgrid(range(q_size), range(q_size))
     d = np.sqrt((x - (q_size / 2) + 1)**2 + (y - (q_size / 2) + 1)**2)
     sp = _interpolation_function(d, atom_sf.fe, q_size)
-    
+
     if plot_result:
-        fig,ax = plt.subplots(1,2,figsize=figsize)
+        fig, ax = plt.subplots(1, 2, figsize=figsize)
         ax[0].plot(q, atom_sf.fe, 'r-')
         ax[0].set_xlabel('Scattering Vector [1/Angstrom]', size=12)
         ax[0].set_ylabel('Single Atom Scattering', size=12)
-        ax[0].set_xlim([0, 2]);
+        ax[0].set_xlim([0, 2])
         ax[1].imshow(sp, cmap='inferno')
         plt.tight_layout()
     return sp
+
 
 def get_simulated_data():
     datafile = os.path.join(merlintools_path, "tests", "test_data", "SimulatedData.hdf5")
