@@ -130,6 +130,7 @@ def preprocess(datadir, processed_data_path=".", full_align=False, check_fpd=Tru
     """
     h5files = glob.glob(datadir + "/**/*.hdf5", recursive=True)
     data = [None] * len(h5files)
+    print(h5files)
     for i in range(0, len(h5files)):
         data[i] = create_dataset(h5files[i], full_align, check_fpd)
         outpath = os.path.join(processed_data_path, h5files[i].split('/')[-3], h5files[i].split('/')[-2])

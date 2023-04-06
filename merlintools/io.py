@@ -437,6 +437,11 @@ def get_microscope_parameters(data, display=False):
                 mag = float(data.TIA0.tags["ObjectInfo/"
                                            "ExperimentalDescription"]["Magnification_x"][...])
                 logger.info("Found microscope parameters in TIA metadata of FPD file")
+        else:
+            logger.info("Unable to find microscope parameters in FPD file")
+            cl = "Unknown"
+            ht = "Unknown"
+            mag = "Unknown"
     else:
         logger.info("Unable to find microscope parameters in FPD file")
         cl = "Unknown"
@@ -715,7 +720,7 @@ def read_h5_results(h5file):
     str_keys = ['qcal_units', 'xcal_units', 'ycal_units']
     dataset = {}
     with h5py.File(h5file, 'r') as h5:
-        dataset['filename'] = h5['filename'].asstr()[()]
+        dataset['filename'] = h5['filename'][()]
         if type(dataset['filename']) is bytes:
             dataset['filename'] = dataset['filename'].decode()
         dataset['nt'] = fpdf.fpd_to_tuple(dataset['filename'])
@@ -725,6 +730,8 @@ def read_h5_results(h5file):
         for param in ['CL', 'HT', 'Magnification']:
             if type(h5['params/%s' % param][()]) is bytes:
                 pass
+            elif h5['params/%s' % param][()] == 'Unknown':
+                pass
             else:
                 dataset['params'][param] = np.float32(h5['params/%s' % param][...])
         for k in data_keys:
@@ -732,7 +739,10 @@ def read_h5_results(h5file):
                 dataset[k] = h5[k][...]
         for k in str_keys:
             if k in h5.keys():
-                dataset[k] = h5[k].asstr()[()]
+                if type(h5[k][()]) is str:
+                    dataset[k] = h5[k][()]
+                else:
+                    dataset[k] = h5[k].asstr()[()]
         for k in ['sum_image', 'sum_dp', 'aligned']:
             dataset[k] = h5[k][...],
             dataset[k] = dataset[k][0]

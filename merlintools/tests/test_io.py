@@ -78,7 +78,7 @@ class TestGetMicroscopeParameters:
         mb.write_hdf5(h5filename)
         params = merlintools.io.get_microscope_parameters(h5filename)
         temp_dir.cleanup()
-        assert params['HT'] == 200.0
+        assert params['HT'] == 'Unknown'
 
     def test_tia_scope_parameters_h5(self):
         temp_dir = TemporaryDirectory()
@@ -94,7 +94,7 @@ class TestGetMicroscopeParameters:
         with h5py.File(h5filename, 'r') as h5:
             params = merlintools.io.get_microscope_parameters(h5)
         temp_dir.cleanup()
-        assert params['HT'] == 200.0
+        assert params['HT'] == 'Unknown'
 
     def test_tia_scope_parameters_nt(self):
         temp_dir = TemporaryDirectory()
@@ -110,7 +110,7 @@ class TestGetMicroscopeParameters:
         nt = fpdf.fpd_to_tuple(h5filename)
         params = merlintools.io.get_microscope_parameters(nt)
         temp_dir.cleanup()
-        assert params['HT'] == 200.0
+        assert params['HT'] == 'Unknown'
 
     def test_dm_scope_parameters_filename(self):
         temp_dir = TemporaryDirectory()

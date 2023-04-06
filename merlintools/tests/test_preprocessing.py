@@ -21,7 +21,7 @@ class TestPreprocessing:
     """Test MIB conversion functionality."""
 
     def test_no_radial_profile(self):
-        test_data_dir = os.path.join(merlin_path, "tests", "test_data")
+        test_data_dir = os.path.join(merlin_path, "tests", "test_data", "ConvertedHDF5")
         temp_dir = TemporaryDirectory()
         merlintools.preprocessing.preprocess(test_data_dir, temp_dir.name)
         h5file = glob.glob(temp_dir.name + '/**/*.hdf5', recursive=True)[0]
@@ -30,7 +30,7 @@ class TestPreprocessing:
         assert 'radial_profile' in h5.keys()
 
     def test_not_full_aligned(self):
-        test_data_dir = os.path.join(merlin_path, "tests", "test_data")
+        test_data_dir = os.path.join(merlin_path, "tests", "test_data", "ConvertedHDF5")
         temp_dir = TemporaryDirectory()
         merlintools.preprocessing.preprocess(test_data_dir, temp_dir.name, full_align=True)
         h5file = glob.glob(temp_dir.name + '/**/*.hdf5', recursive=True)[0]
