@@ -61,7 +61,7 @@ class TestMIBConversion:
         ser = glob.glob(datadir + '/*.ser')
         dm = glob.glob(datadir + '/*.dm*')
         mb = merlintools.preprocessing.get_merlin_binary(mib, hdr, emi, ser, dm)
-        assert mb.shape == (1, 256, 256, 256)
+        assert mb.shape == (16, 16, 256, 256)
 
 
 class TestGetMicroscopeParameters:
@@ -78,7 +78,7 @@ class TestGetMicroscopeParameters:
         mb.write_hdf5(h5filename)
         params = merlintools.io.get_microscope_parameters(h5filename)
         temp_dir.cleanup()
-        assert params['HT'] == 'Unknown'
+        assert params['HT'] == 200.0
 
     def test_tia_scope_parameters_h5(self):
         temp_dir = TemporaryDirectory()
@@ -94,7 +94,7 @@ class TestGetMicroscopeParameters:
         with h5py.File(h5filename, 'r') as h5:
             params = merlintools.io.get_microscope_parameters(h5)
         temp_dir.cleanup()
-        assert params['HT'] == 'Unknown'
+        assert params['HT'] == 200.0
 
     def test_tia_scope_parameters_nt(self):
         temp_dir = TemporaryDirectory()
@@ -110,7 +110,7 @@ class TestGetMicroscopeParameters:
         nt = fpdf.fpd_to_tuple(h5filename)
         params = merlintools.io.get_microscope_parameters(nt)
         temp_dir.cleanup()
-        assert params['HT'] == 'Unknown'
+        assert params['HT'] == 200.0
 
     def test_dm_scope_parameters_filename(self):
         temp_dir = TemporaryDirectory()
