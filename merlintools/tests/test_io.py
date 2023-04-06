@@ -61,7 +61,7 @@ class TestMIBConversion:
         ser = glob.glob(datadir + '/*.ser')
         dm = glob.glob(datadir + '/*.dm*')
         mb = merlintools.preprocessing.get_merlin_binary(mib, hdr, emi, ser, dm)
-        assert mb.shape == (16, 16, 256, 256)
+        assert mb.shape == (1, 256, 256, 256)
 
 
 class TestGetMicroscopeParameters:
