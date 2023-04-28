@@ -528,7 +528,10 @@ def get_experimental_parameters(h5files):
         with h5py.File(h5files[i], 'r') as h5:
             h5keys = h5.keys()
             if 'filename' in h5keys:
-                parent_filename = h5['filename'][()].decode()
+                if type(h5['filename'][()]) is str:
+                    parent_filename = h5['filename'][()]
+                else:
+                    parent_filename = h5['filename'][()].decode()
         if fpd_check(h5files[i]):
             microscope_params = get_microscope_parameters(h5files[i])
             hts[i] = microscope_params['HT']
