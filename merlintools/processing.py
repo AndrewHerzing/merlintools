@@ -109,14 +109,14 @@ def shift_align(ds, shifts, nr=16, nc=16, sub_pixel=True, interpolation=3):
         else:
             syx = np.int32(np.round(shift_array, 0))
             interpolation = 0
-        new_im = ndimage.shift(image, -syx, order=interpolation)
+        new_im = ndimage.shift(image, syx, order=interpolation)
         return new_im
 
     ali = fpdp.map_image_function(ds, nr, nc, func=ali_func,
                                   mapped_params={'shift_array': np.moveaxis(shifts, 0, -1)},
                                   params={'sub_pixel': sub_pixel,
                                           'interpolation': interpolation})
-    ali = ali.T.reshape(ds.shape)
+    ali = np.moveaxis(ali, 0, -1).reshape(ds.shape)
     return ali
 
 

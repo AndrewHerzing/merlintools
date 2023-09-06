@@ -15,10 +15,15 @@ import json
 import os
 import merlintools
 import glob
-import py4DSTEM
 from scipy.interpolate import interp1d
 import matplotlib.pylab as plt
 import fpd.fpd_file as fpdf
+try:
+    import py4DSTEM
+except ImportError:
+    haspy4dstem = False
+else:
+    haspy4dstem = True
 
 merlintools_path = os.path.dirname(merlintools.__file__)
 
@@ -461,8 +466,11 @@ def get_2d_scattering_profile(Z, composition, q_range=[0, 2], q_size=256, plot_r
 
     q = np.linspace(q_range[0], q_range[1], q_size)
 
-    atom_sf = py4DSTEM.process.utils.single_atom_scatter(Z, composition, q, 'A')
-    atom_sf.get_scattering_factor(Z, composition, q, 'A')
+    if haspy4dstem:
+        atom_sf = py4DSTEM.process.utils.single_atom_scatter(Z, composition, q, 'A')
+        atom_sf.get_scattering_factor(Z, composition, q, 'A')
+    else:
+        raise ImportError('py4DSTEM not installed.  This function is not available.')
 
     x, y = np.meshgrid(range(q_size), range(q_size))
     d = np.sqrt((x - (q_size / 2) + 1)**2 + (y - (q_size / 2) + 1)**2)
