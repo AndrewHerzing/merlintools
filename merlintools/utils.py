@@ -241,7 +241,7 @@ def calc_dose_pixel(probe_current, pixel_size, dwell_time):
 
 def calc_dose_probe(probe_current, probe_fwhm, dwell_time):
     """
-    Calulate electron based on the measured probe size.
+    Calculate electron dose based on the measured probe size.
 
     Args
     ---------
@@ -262,6 +262,27 @@ def calc_dose_probe(probe_current, probe_fwhm, dwell_time):
     dose = n_electrons / (np.pi * (probe_fwhm / 2)**2)
     return dose
 
+def calc_dose_limited_resolution(probe_current, dwell_time, dose):
+    """
+    Calulate dose limited resolution based on the measured probe current, dwell time, and dose budget.
+
+    Args
+    ---------
+    probe_current : float
+        Measured probe current in amps
+    dwell_time : float
+        Per pixel dwell time in seconds
+    dose : float
+        Dose budget in electrons/A^2
+
+    Returns
+    ---------
+    r : float
+        Dose-limited resolution in Angstroms
+
+    """
+    r = np.sqrt(probe_current * 6.24e18 * dwell_time / np.pi / dose)
+    return r
 
 def _fit_func(x, A, exp):
     return A * x**exp
