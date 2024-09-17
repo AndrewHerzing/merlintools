@@ -186,7 +186,7 @@ class TestHeaderParsing:
         assert type(header) is dict
         assert 'TimeStamp' in header.keys()
         assert 'SoftwareVersion' in header.keys()
-        assert np.int(header['TotalFrames']) == 11007
+        assert int(header['TotalFrames']) == 11007
 
     def test_mib_parser(self):
         """Parse MIB file."""

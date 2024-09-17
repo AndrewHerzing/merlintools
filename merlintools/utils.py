@@ -267,6 +267,7 @@ def calc_dose_probe(probe_current, probe_fwhm, dwell_time):
     dose = n_electrons / (np.pi * (probe_fwhm / 2)**2)
     return dose
 
+
 def calc_dose_limited_resolution(probe_current, dwell_time, dose):
     """
     Calulate dose limited resolution based on the measured probe current, dwell time, and dose budget.
@@ -288,6 +289,7 @@ def calc_dose_limited_resolution(probe_current, dwell_time, dose):
     """
     r = np.sqrt(probe_current * 6.24e18 * dwell_time / np.pi / dose)
     return r
+
 
 def _fit_func(x, A, exp):
     return A * x**exp
