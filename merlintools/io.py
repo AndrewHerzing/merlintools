@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def convert_to_zspy(datapath):
+def convert_to_zspy(datapath, ow=False):
     """
     Convert Merlin 4DSTEM data to HyperSpy Zarr format.
 
@@ -39,6 +39,8 @@ def convert_to_zspy(datapath):
     ----------
     datapath : str
         Location of data to conver
+    ow : bool
+        If True, overwrite data already converted in the given path
 
 
     """
@@ -61,8 +63,8 @@ def convert_to_zspy(datapath):
             original_metadata=d["original_metadata"],
         ).as_lazy()
         sig.compute()
-        sig.save(data4d_hspy_file, overwrite=True, file_format="HSPY")
-        sig.save(data4d_zspy_file, overwrite=True)
+        sig.save(data4d_hspy_file, overwrite=ow, file_format="HSPY")
+        sig.save(data4d_zspy_file, overwrite=ow)
 
     else:
         sum_dp_file = fileparts[-2] + "/" + fileparts[-1][:-4] + "_Sum_DP.hspy"
@@ -92,11 +94,11 @@ def convert_to_zspy(datapath):
         sum_img.compute()
         sum_img = sum_img.as_signal2D((0, 1))
 
-        sum_dp.save(sum_dp_file, overwrite=True, file_format="HSPY")
-        sum_img.save(sum_img_file, overwrite=True, file_format="HSPY")
+        sum_dp.save(sum_dp_file, overwrite=ow, file_format="HSPY")
+        sum_img.save(sum_img_file, overwrite=ow, file_format="HSPY")
 
-        sig.save(data4d_hspy_file, overwrite=True, file_format="HSPY")
-        sig.save(data4d_zspy_file, overwrite=True)
+        sig.save(data4d_hspy_file, overwrite=ow, file_format="HSPY")
+        sig.save(data4d_zspy_file, overwrite=ow)
 
 
 def get_data_summary(datapath, text_offset=0.15):
