@@ -20,9 +20,6 @@ from merlintools.processing import radial_profile, shift_align
 import fpd.fpd_file as fpdf
 import fpd.fpd_processing as fpdp
 from hyperspy.io import load
-from rsciio import quantumdetector as qd
-from rsciio import tia
-from hyperspy.signals import Signal2D
 import matplotlib.pyplot as plt
 
 logger = logging.getLogger(__name__)
@@ -46,59 +43,50 @@ def convert_to_zspy(datapath, ow=False):
     """
     mibfile = glob.glob(datapath + "/*.mib")[0]
     fileparts = mibfile.split("/")
-    data4d_hspy_file = fileparts[-2] + "/" + fileparts[-1][:-4] + ".hspy"
     data4d_zspy_file = fileparts[-2] + "/" + fileparts[-1][:-4] + ".zspy"
 
-    serfile = glob.glob(datapath + "/*.ser")
-    if len(serfile) == 0:
-        d = qd.file_reader(mibfile, lazy=True)[0]
-        d["axes"][1]["name"] = "y"
-        d["axes"][2]["name"] = "x"
-        d["axes"][1]["units"] = "pixels"
-        d["axes"][2]["units"] = "pixels"
-        sig = Signal2D(
-            d["data"],
-            axes=d["axes"],
-            metadata=d["metadata"],
-            original_metadata=d["original_metadata"],
-        ).as_lazy()
-        sig.compute()
-        sig.save(data4d_hspy_file, overwrite=ow, file_format="HSPY")
-        sig.save(data4d_zspy_file, overwrite=ow)
+    emifile = glob.glob(datapath + "/*.emi")
+    if len(emifile) == 0:
+        dp = load(mibfile, lazy=False)
+        dp.set_diffraction_calibration(1.0)
+        dp.axes_manager[1].name = "y"
+        dp.axes_manager[1].name = "x"
+        dp.axes_manager[1].units = "pixels"
+        dp.axes_manager[1].units = "pixels"
+        dp.save(data4d_zspy_file, overwrite=ow)
 
     else:
         sum_dp_file = fileparts[-2] + "/" + fileparts[-1][:-4] + "_Sum_DP.hspy"
         sum_img_file = fileparts[-2] + "/" + fileparts[-1][:-4] + "_Sum_Image.hspy"
-        s = tia.file_reader(serfile[0])[0]
+        emi = load(emifile[0])
+        beam_energy = emi.metadata.Acquisition_instrument.TEM.beam_energy
+        cl = emi.metadata.Acquisition_instrument.TEM.camera_length / 10
+        dwell = emi.metadata.Acquisition_instrument.TEM.Detector.Camera.exposure * 1000
+        scan_rotation = (
+            emi.original_metadata.ObjectInfo.ExperimentalDescription.Stem_rotation_deg
+        )
+        pixsize = emi.axes_manager[0].scale
 
-        ny, nx = s["data"].shape[-2:]
+        dp = load(mibfile, lazy=True)
+        dp.set_experimental_parameters(
+            beam_energy=beam_energy,
+            camera_length=cl,
+            exposure_time=dwell,
+            scan_rotation=scan_rotation,
+        )
+        dp.set_scan_calibration(pixsize)
+        dp.set_diffraction_calibration(1.0)
 
-        d = qd.file_reader(mibfile, navigation_shape=(ny, nx), lazy=True)[0]
-
-        d["axes"][2]["name"] = "q$_{y}$"
-        d["axes"][3]["name"] = "q$_{x}$"
-        d["axes"][2]["units"] = "nm$^{-1}$"
-        d["axes"][3]["units"] = "nm$^{-1}$"
-
-        sig = Signal2D(
-            d["data"],
-            axes=[s["axes"][-2], s["axes"][-1], d["axes"][2], d["axes"][3]],
-            metadata=d["metadata"],
-            original_metadata=d["original_metadata"],
-        ).as_lazy()
-
-        sum_dp = sig.sum((0, 1))
+        sum_dp = dp.sum((0, 1))
         sum_dp.compute()
 
-        sum_img = sig.sum((2, 3))
+        sum_img = dp.sum((2, 3))
         sum_img.compute()
         sum_img = sum_img.as_signal2D((0, 1))
 
         sum_dp.save(sum_dp_file, overwrite=ow, file_format="HSPY")
         sum_img.save(sum_img_file, overwrite=ow, file_format="HSPY")
-
-        sig.save(data4d_hspy_file, overwrite=ow, file_format="HSPY")
-        sig.save(data4d_zspy_file, overwrite=ow)
+        dp.save(data4d_zspy_file, overwrite=ow)
 
 
 def get_data_summary(datapath, text_offset=0.15):
