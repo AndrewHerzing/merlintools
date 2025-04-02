@@ -110,26 +110,49 @@ def get_data_summary(datapath, text_offset=0.15):
     pixel_size = s.axes_manager[0].scale
     pixel_units = s.axes_manager[0].units
     timestamp = datapath[:-1]
+    if s.metadata.has_item(
+        "Acquisition_instrument.TEM.Detector.Diffraction.camera_length"
+    ):
+        cl = (
+            s.metadata.Acquisition_instrument.TEM.Detector.Diffraction.camera_length
+            * 10
+        )
+        cl = str(round(cl, 1))
+    else:
+        cl = "Unknown"
+    if s.metadata.has_item("Acquisition_instrument.TEM.beam_energy"):
+        beam_energy = s.metadata.Acquisition_instrument.TEM.beam_energy
+        beam_energy = str(round(beam_energy, 1))
+    else:
+        beam_energy = "Unknown"
+    if s.metadata.has_item("Acquisition_instrument.TEM.scan_rotation"):
+        scan_rotation = s.metadata.Acquisition_instrument.TEM.scan_rotation
+        scan_rotation = str(round(scan_rotation, 1))
+    else:
+        scan_rotation = "Unknown"
     filename = zspy_file.split("/")[1]
 
     fig, ax = plt.subplots(1, 2, figsize=(7, 3))
     fig.suptitle("Dataset: %s" % timestamp)
-    ax[0].text(text_offset, 0.65, "Filename: %s" % filename)
+    ax[0].text(text_offset, 0.80, "Filename: %s" % filename)
 
     sum_img_file = glob.glob(datapath + "/*Sum_Image.hspy")
     if len(sum_img_file) == 0:
-        ax[0].text(text_offset, 0.55, "Scan Shape: (%s , )" % data_shape[0])
+        ax[0].text(text_offset, 0.70, "Scan Shape: (%s , )" % data_shape[0])
         ax[1].imshow(np.zeros([256, 256]), cmap="grey")
         ax[1].text(50, 128, "No Scan Data", fontsize=15, color="red")
     else:
         sum_img = load(sum_img_file[0])
         ax[0].text(
-            text_offset, 0.55, "Scan Shape: (%s , %s)" % (data_shape[0], data_shape[1])
+            text_offset, 0.70, "Scan Shape: (%s , %s)" % (data_shape[0], data_shape[1])
         )
         ax[1].imshow(sum_img.data, cmap="inferno")
 
-    ax[0].text(text_offset, 0.45, "Pixel Size: %.2f %s" % (pixel_size, pixel_units))
-    ax[0].text(text_offset, 0.35, "Frame Time: %.1f msec" % dwell)
+    ax[0].text(text_offset, 0.60, "Pixel Size: %.2f %s" % (pixel_size, pixel_units))
+    ax[0].text(text_offset, 0.50, "Frame Time: %.1f msec" % dwell)
+    ax[0].text(text_offset, 0.40, "Beam Energy: %s keV" % beam_energy)
+    ax[0].text(text_offset, 0.30, "Camera Length: %s mm" % cl)
+    ax[0].text(text_offset, 0.20, "Camera Length: %s degrees" % scan_rotation)
     ax[0].axis("off")
 
 
