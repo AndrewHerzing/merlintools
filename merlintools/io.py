@@ -59,17 +59,16 @@ def convert_to_zspy(datapath, ow=False):
         sum_dp_file = fileparts[-2] + "/" + fileparts[-1][:-4] + "_Sum_DP.hspy"
         sum_img_file = fileparts[-2] + "/" + fileparts[-1][:-4] + "_Sum_Image.hspy"
         emi = load(emifile[0])
-        beam_energy = emi.metadata.Acquisition_instrument.TEM.beam_energy
         cl = emi.metadata.Acquisition_instrument.TEM.camera_length / 10
         dwell = emi.metadata.Acquisition_instrument.TEM.Detector.Camera.exposure * 1000
         scan_rotation = (
             emi.original_metadata.ObjectInfo.ExperimentalDescription.Stem_rotation_deg
         )
-        pixsize = emi.axes_manager[0].scale
+        pixsize = emi.axes_manager[-1].scale
 
         dp = load(mibfile, lazy=True)
+        dp.metadata.Acquisition_instrument.TEM = emi.metadata.Acquisition_instrument.TEM
         dp.set_experimental_parameters(
-            beam_energy=beam_energy,
             camera_length=cl,
             exposure_time=dwell,
             scan_rotation=scan_rotation,
@@ -87,6 +86,9 @@ def convert_to_zspy(datapath, ow=False):
         sum_dp.save(sum_dp_file, overwrite=ow, file_format="HSPY")
         sum_img.save(sum_img_file, overwrite=ow, file_format="HSPY")
         dp.save(data4d_zspy_file, overwrite=ow)
+
+        del sum_dp, sum_img
+    del dp
 
 
 def get_data_summary(datapath, text_offset=0.15):
