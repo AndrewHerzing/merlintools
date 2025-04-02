@@ -3,7 +3,7 @@ import py4DSTEM
 import matplotlib.pylab as plt
 import h5py
 import hyperspy.api as hs
-from merlintools.utils import get_lattice_spacings
+from merlintools.utils import get_lattice_spacings, k_to_mrads
 from scipy.optimize import curve_fit
 from matplotlib.patches import Wedge
 import fpd.fpd_processing as fpdp
@@ -642,6 +642,7 @@ class CalibrationUpdater:
 
         self.dp_update = None
         self.zspy_update = None
+        self.beam_energy = self.dp.metadata.Acquisition_instrument.TEM.beam_energy
 
     def plot_rois(self, vmax=None):
         if vmax is None:
@@ -663,13 +664,21 @@ class CalibrationUpdater:
         self.kcal = g111 / (distance / 2)
         print("Calibration: %.3f nm^-1/pixel" % self.kcal)
 
+        alpha_k = self.kcal * (self.roi.r + self.roi2.r) / 2
+        self.alpha = k_to_mrads(2 * alpha_k, self.beam_energy)
+        print("Convergence angle: %.3f mrads" % self.alpha)
+
     def update_kcal(self):
         self.dp.set_diffraction_calibration(self.kcal)
+        self.dp.set_experimental_parameters(convergence_angle=self.alpha)
         self.dp.save(self.single_dp_file, overwrite=True)
 
         zspy_group = zarr.open(self.zspy_file, "r+")
         zspy_group["Experiments/__unnamed__/axis-2"].attrs["scale"] = self.kcal
         zspy_group["Experiments/__unnamed__/axis-3"].attrs["scale"] = self.kcal
+        zspy_group["Experiments/__unnamed__/metadata/Acquisition_instrument"][
+            "TEM"
+        ].attrs["convergence_angle"] = self.alpha
         zspy_group.store.close()
         return
 
