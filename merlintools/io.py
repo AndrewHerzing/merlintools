@@ -154,7 +154,7 @@ def get_data_summary(datapath, text_offset=0.15):
     ax[0].text(text_offset, 0.50, "Frame Time: %.1f msec" % dwell)
     ax[0].text(text_offset, 0.40, "Beam Energy: %s keV" % beam_energy)
     ax[0].text(text_offset, 0.30, "Camera Length: %s mm" % cl)
-    ax[0].text(text_offset, 0.20, "Camera Length: %s degrees" % scan_rotation)
+    ax[0].text(text_offset, 0.20, "Scan Rotation: %s degrees" % scan_rotation)
     ax[0].axis("off")
 
 

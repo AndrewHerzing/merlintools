@@ -630,17 +630,18 @@ def load_calibration_results(h5filename):
 
 
 class CalibrationUpdater:
-    def __init__(self, zspy_file, single_dp_file):
+    def __init__(self, zspy_file):
         self.zspy_file = zspy_file
-        self.single_dp_file = single_dp_file
+        self.dp_file = zspy_file[:-5] + "_Sum_DP.hspy"
 
-        self.dp = hs.load(single_dp_file)
+        s = hs.load(zspy_file, lazy=True)
+        self.dp = s.sum((0, 1))
+        self.dp.compute()
         self.dp.axes_manager[0].scale = 1.0
         self.dp.axes_manager[1].scale = 1.0
         self.dp.axes_manager[0].offset = -(self.dp.data.shape[1] / 2)
         self.dp.axes_manager[1].offset = -(self.dp.data.shape[0] / 2)
 
-        self.dp_update = None
         self.zspy_update = None
         self.beam_energy = self.dp.metadata.Acquisition_instrument.TEM.beam_energy
 
@@ -666,16 +667,23 @@ class CalibrationUpdater:
 
         alpha_k = self.kcal * (self.roi.r + self.roi2.r) / 2
         self.alpha = k_to_mrads(2 * alpha_k, self.beam_energy)
-        print("Convergence angle: %.3f mrads" % self.alpha)
+        self.alpha = round(self.alpha, 1)
+        print("Convergence angle: %.1f mrads" % self.alpha)
 
     def update_kcal(self):
         self.dp.set_diffraction_calibration(self.kcal)
         self.dp.set_experimental_parameters(convergence_angle=self.alpha)
-        self.dp.save(self.single_dp_file, overwrite=True)
+        self.dp.save(self.dp_file, overwrite=True, file_format="HSPY")
 
         zspy_group = zarr.open(self.zspy_file, "r+")
         zspy_group["Experiments/__unnamed__/axis-2"].attrs["scale"] = self.kcal
         zspy_group["Experiments/__unnamed__/axis-3"].attrs["scale"] = self.kcal
+        zspy_group["Experiments/__unnamed__/axis-2"].attrs["offset"] = (
+            self.kcal * -128.0
+        )
+        zspy_group["Experiments/__unnamed__/axis-3"].attrs["offset"] = (
+            self.kcal * -128.0
+        )
         zspy_group["Experiments/__unnamed__/metadata/Acquisition_instrument"][
             "TEM"
         ].attrs["convergence_angle"] = self.alpha
@@ -683,16 +691,7 @@ class CalibrationUpdater:
         return
 
     def check_kcal(self):
-        self.dp_update = hs.load(self.single_dp_file)
         self.zspy_update = hs.load(self.zspy_file, lazy=True)
-
-        if (
-            self.dp_update.axes_manager[0].scale == self.kcal
-            and self.dp_update.axes_manager[1].scale == self.kcal
-        ):
-            print("Single DP calibration is correct!")
-        else:
-            print("Single DP calibration is incorrect.")
 
         if (
             self.zspy_update.axes_manager[2].scale == self.kcal
