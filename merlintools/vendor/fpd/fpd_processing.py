@@ -374,7 +374,7 @@ def sum_im(data, nr, nc, mask=None, nrnc_are_chunks=False, progress_bar=True):
 
 
 def _shift_func(d_dyx, dyx_mode):
-    from fpd.synthetic_data import shift_im
+    from .synthetic_data import shift_im
 
     di, dyxi = d_dyx
     try:
@@ -436,7 +436,7 @@ def _shift_images(
 
     """
 
-    from fpd.synthetic_data import shift_im
+    from .synthetic_data import shift_im
     from fpd.utils import seq_image_array, unseq_image_array
 
     dyx, dyx_mode = _condition_dyx(dyx, dyx_mode)
@@ -559,7 +559,7 @@ def sum_dif(
     to a suitable values can improve performance.
 
     """
-    from fpd.synthetic_data import _fill_shifted_image
+    from .synthetic_data import _fill_shifted_image
 
     if fill_value == None:
         fill_value = np.nan
@@ -4169,7 +4169,7 @@ class VirtualAnnularImages(object):
         else:
             dyx, dyx_mode = _condition_dyx(dyx, dyx_mode)
 
-            from fpd.synthetic_data import shift_im
+            from .synthetic_data import shift_im
 
             def wrapped_radial_profile(image, dyx, **kwdargs):
                 shifted_image = shift_im(image, dyx, method="pixel")

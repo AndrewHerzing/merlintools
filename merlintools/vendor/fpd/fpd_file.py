@@ -1284,6 +1284,10 @@ def _create_bin_header_str_dataset(
     kwd.update({"shape": shp, "dtype": h5py.special_dtype(vlen=bytes), "maxshape": shp})
     kwd.pop("fillvalue")
 
+    filter_keys = ["compression", "compression_opts", "chunks", "shuffle", "fletcher32"]
+    for key in filter_keys:
+        kwd.pop(key, None)
+
     fpd_binary_hdr_dataset = _create_emd(
         group,
         "binary_hdr",
@@ -3048,7 +3052,7 @@ def slice_indices(data_shape, data_chunks, iterator=False):
     # convert to list
     sss = [x.tolist() for x in sss]
     # calculate total chuncks
-    n = np.product([len(i) for i in sss])
+    n = np.prod([len(i) for i in sss])
     # generate iterator
     sinds = product(*sss)
 
