@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "merlintools"
+version = "0.1.dev0"
+description = "Handle 4D-STEM data collected with a Merlin detector."
+readme = "README.md"
+authors = [
+    { name = "Andrew Herzing", email = "andrew.herzing@nist.gov" }
+]
+license = { text = "GPL v3" }
+keywords = ["STEM", "data analysis", "microscopy", "4D-STEM"]
+requires-python = ">=3.12"
+
+dependencies = [
+    "numpy",
+    "hyperspy",
+    "fpd",
+    "tqdm",
+    "pyxem",
+]
