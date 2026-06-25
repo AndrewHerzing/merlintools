@@ -6,7 +6,7 @@ import matplotlib.pylab as plt
 import os
 
 import fpd
-import fpd.fpd_processing as fpdp
+from merlintools.vendor.fpd import fpd_processing as fpdp
 
 
 def close_enough(a, b, rtol, atol):

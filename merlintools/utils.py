@@ -17,7 +17,7 @@ import merlintools
 import glob
 from scipy.interpolate import interp1d
 import matplotlib.pylab as plt
-import fpd.fpd_file as fpdf
+from merlintools.vendor.fpd import fpd_file as fpdf
 from scipy.spatial.transform import Rotation
 
 try:

@@ -11,8 +11,8 @@ processing module for MerlinTools package.
 import os
 import hyperspy.api as hs
 import numpy as np
-import fpd.fpd_processing as fpdp
-import fpd.fpd_file as fpdf
+from merlintools.vendor.fpd import fpd_processing as fpdp
+from merlintools.vendor.fpd import fpd_file as fpdf
 from scipy import ndimage, optimize
 import matplotlib.pylab as plt
 from merlintools import color
@@ -49,17 +49,21 @@ def radial_profile(ds, center_yx, recip_calib=None, crop=True, spf=1.0):
     radial : NumPy Array
         Radial average as a function of beam scan position
     """
+
     def _radial_func(frame, center, r_nm_pp, spf):
         r_pix, rms = fpdp.radial_profile(frame, center, r_nm_pp=r_nm_pp, spf=spf)
         return r_pix, rms
 
     cyx = np.moveaxis(center_yx, 0, -1)
 
-    res = fpdp.map_image_function(ds, nr=32, nc=32,
-                                  func=_radial_func,
-                                  mapped_params={'center': cyx},
-                                  params={'r_nm_pp': recip_calib,
-                                          'spf': spf})
+    res = fpdp.map_image_function(
+        ds,
+        nr=32,
+        nc=32,
+        func=_radial_func,
+        mapped_params={"center": cyx},
+        params={"r_nm_pp": recip_calib, "spf": spf},
+    )
 
     min_length = np.inf
     for i in range(0, res.shape[0]):
@@ -74,8 +78,8 @@ def radial_profile(ds, center_yx, recip_calib=None, crop=True, spf=1.0):
             for j in range(0, res.shape[1]):
                 radial[i, j, :] = res[i, j][1][0:min_length]
     else:
-        bins = np.array(np.empty([ds.shape[0], ds.shape[1]]), dtype='object')
-        radial = np.array(np.empty([ds.shape[0], ds.shape[1]]), dtype='object')
+        bins = np.array(np.empty([ds.shape[0], ds.shape[1]]), dtype="object")
+        radial = np.array(np.empty([ds.shape[0], ds.shape[1]]), dtype="object")
         for i in range(0, res.shape[0]):
             for j in range(0, res.shape[1]):
                 bins[i, j] = res[i, j][0]
@@ -103,6 +107,7 @@ def shift_align(ds, shifts, nr=16, nc=16, sub_pixel=True, interpolation=3):
     ali : NumPy Array
         Aligned version of ds
     """
+
     def ali_func(image, shift_array, sub_pixel, interpolation):
         if sub_pixel:
             syx = shift_array
@@ -112,16 +117,26 @@ def shift_align(ds, shifts, nr=16, nc=16, sub_pixel=True, interpolation=3):
         new_im = ndimage.shift(image, syx, order=interpolation)
         return new_im
 
-    ali = fpdp.map_image_function(ds, nr, nc, func=ali_func,
-                                  mapped_params={'shift_array': np.moveaxis(shifts, 0, -1)},
-                                  params={'sub_pixel': sub_pixel,
-                                          'interpolation': interpolation})
+    ali = fpdp.map_image_function(
+        ds,
+        nr,
+        nc,
+        func=ali_func,
+        mapped_params={"shift_array": np.moveaxis(shifts, 0, -1)},
+        params={"sub_pixel": sub_pixel, "interpolation": interpolation},
+    )
     ali = np.moveaxis(ali, 0, -1).reshape(ds.shape)
     return ali
 
 
-def align_merlin(h5filename, sub_pixel=True, interpolation=3,
-                 apply_threshold=True, apply_mask=True, output_path=None):
+def align_merlin(
+    h5filename,
+    sub_pixel=True,
+    interpolation=3,
+    apply_threshold=True,
+    apply_mask=True,
+    output_path=None,
+):
     """
     Align the data using fpd center of mass analysis.
 
@@ -146,8 +161,10 @@ def align_merlin(h5filename, sub_pixel=True, interpolation=3,
         specified path.
 
     """
-    def shift_func(image, scanYind, scanXind, shift_array, sub_pixel=True,
-                   interpolation=3):
+
+    def shift_func(
+        image, scanYind, scanXind, shift_array, sub_pixel=True, interpolation=3
+    ):
         if sub_pixel:
             syx = shift_array[:, scanYind, scanXind]
         else:
@@ -161,8 +178,8 @@ def align_merlin(h5filename, sub_pixel=True, interpolation=3,
         shifts_file = os.path.splitext(h5filename)[0] + "_Shifts.npy"
         ali_file = os.path.splitext(h5filename)[0] + "_Aligned.hdf5"
     else:
-        if output_path[-1] != '/':
-            output_path = output_path + '/'
+        if output_path[-1] != "/":
+            output_path = output_path + "/"
         rootname = os.path.splitext(os.path.split(h5filename)[1])[0]
         coms_file = output_path + rootname + "_CoMs.npy"
         shifts_file = output_path + rootname + "_Shifts.npy"
@@ -181,36 +198,59 @@ def align_merlin(h5filename, sub_pixel=True, interpolation=3,
         thresh_val = None
 
     if apply_mask:
-        cyx, cr = fpdp.find_circ_centre(sum_dif, 10, (6, 20, 2), pct=90,
-                                        spf=1, plot=False)
+        cyx, cr = fpdp.find_circ_centre(
+            sum_dif, 10, (6, 20, 2), pct=90, spf=1, plot=False
+        )
 
-        mask = fpdp.synthetic_aperture(shape=ds.shape[-2:], cyx=cyx,
-                                       rio=(0, cr * 2.5), sigma=0)[0]
+        mask = fpdp.synthetic_aperture(
+            shape=ds.shape[-2:], cyx=cyx, rio=(0, cr * 2.5), sigma=0
+        )[0]
         mask = np.ceil(mask)
     else:
         mask = None
 
-    com_yx = fpdp.center_of_mass(ds, nr=None, nc=None, aperture=mask,
-                                 progress_bar=False, print_stats=False,
-                                 parallel=False, thr=thresh_val)
+    com_yx = fpdp.center_of_mass(
+        ds,
+        nr=None,
+        nc=None,
+        aperture=mask,
+        progress_bar=False,
+        print_stats=False,
+        parallel=False,
+        thr=thresh_val,
+    )
     h5f.close()
 
     np.save(coms_file, com_yx)
-    com_yx[np.where(np.isnan(com_yx[:, :, :]))] = 128.
+    com_yx[np.where(np.isnan(com_yx[:, :, :]))] = 128.0
 
-    shifts_yx = com_yx - 128.
+    shifts_yx = com_yx - 128.0
     np.save(shifts_file, shifts_yx)
-    fpdf.make_updated_fpd_file(h5filename, ali_file, shift_func,
-                               func_kwargs={'shift_array': shifts_yx,
-                                            'sub_pixel': sub_pixel,
-                                            'interpolation': interpolation},
-                               ow=True, progress_bar=False)
+    fpdf.make_updated_fpd_file(
+        h5filename,
+        ali_file,
+        shift_func,
+        func_kwargs={
+            "shift_array": shifts_yx,
+            "sub_pixel": sub_pixel,
+            "interpolation": interpolation,
+        },
+        ow=True,
+        progress_bar=False,
+    )
     return
 
 
-def get_segmented_annular_aperture(ds, cyx=(128, 128),
-                                   rio=[[0, 20], [30, 60]], plot_result=False,
-                                   sigma=0, aaf=3, axis=None, color_list=None):
+def get_segmented_annular_aperture(
+    ds,
+    cyx=(128, 128),
+    rio=[[0, 20], [30, 60]],
+    plot_result=False,
+    sigma=0,
+    aaf=3,
+    axis=None,
+    color_list=None,
+):
     """
     Create a segmented annular aperture.
 
@@ -249,8 +289,9 @@ def get_segmented_annular_aperture(ds, cyx=(128, 128),
     rio = np.vstack((rio, np.zeros([4, 2])))
     rio[2:, :] = rio[1, :]
 
-    aps = fpdp.synthetic_aperture(shape=ds.shape[-2:], cyx=cyx, rio=rio,
-                                  sigma=sigma, aaf=aaf)
+    aps = fpdp.synthetic_aperture(
+        shape=ds.shape[-2:], cyx=cyx, rio=rio, sigma=sigma, aaf=aaf
+    )
 
     aps[2, 128:, :] = 0
     aps[2, :, 128:] = 0
@@ -266,9 +307,10 @@ def get_segmented_annular_aperture(ds, cyx=(128, 128),
 
     if plot_result:
         if color_list is None:
-            color_list = ['magenta', 'red', 'green', 'blue', 'yellow']
-        rgb = color.merge_color_channels(aps[[0, 2, 3, 4, 5], :, :],
-                                         color_list=color_list)
+            color_list = ["magenta", "red", "green", "blue", "yellow"]
+        rgb = color.merge_color_channels(
+            aps[[0, 2, 3, 4, 5], :, :], color_list=color_list
+        )
         if axis:
             axis.imshow(rgb)
         else:
@@ -370,14 +412,18 @@ def get_virtual_images(data4d, com_yx, apertures, sub_pixel=True, nr=128, nc=128
 
     def f_pixel(image, mask, shift):
         mask_shifted = np.zeros_like(mask)
-        mask_shifted = [ndimage.shift(mask[i], shift, order=0) for i in range(0, mask.shape[0])]
-        res = (image * mask_shifted)
+        mask_shifted = [
+            ndimage.shift(mask[i], shift, order=0) for i in range(0, mask.shape[0])
+        ]
+        res = image * mask_shifted
         return res
 
     def f_subpixel(image, mask, shift):
         mask_shifted = np.zeros_like(mask)
-        mask_shifted = [ndimage.shift(mask[i], shift, order=3) for i in range(0, mask.shape[0])]
-        res = (image * mask_shifted)
+        mask_shifted = [
+            ndimage.shift(mask[i], shift, order=3) for i in range(0, mask.shape[0])
+        ]
+        res = image * mask_shifted
         return res
 
     scanY, scanX, detY, detX = data4d.shape
@@ -389,15 +435,23 @@ def get_virtual_images(data4d, com_yx, apertures, sub_pixel=True, nr=128, nc=128
 
     if not sub_pixel:
         com_shifts = np.int32(np.round(com_shifts))
-        v_images = fpdp.map_image_function(data4d, nr=nr, nc=nc,
-                                           func=f_pixel,
-                                           params={'mask': apertures},
-                                           mapped_params={'shift': com_shifts})
+        v_images = fpdp.map_image_function(
+            data4d,
+            nr=nr,
+            nc=nc,
+            func=f_pixel,
+            params={"mask": apertures},
+            mapped_params={"shift": com_shifts},
+        )
     else:
-        v_images = fpdp.map_image_function(data4d, nr=nr, nc=nc,
-                                           func=f_subpixel,
-                                           params={'mask': apertures},
-                                           mapped_params={'shift': com_shifts})
+        v_images = fpdp.map_image_function(
+            data4d,
+            nr=nr,
+            nc=nc,
+            func=f_subpixel,
+            params={"mask": apertures},
+            mapped_params={"shift": com_shifts},
+        )
 
     v_images = v_images.reshape([n_apts, detY, detX, scanY, scanX]).sum((1, 2))
     return v_images
@@ -421,17 +475,28 @@ def get_q_images(data, q_ranges):
     """
     if type(q_ranges) is not list:
         q_ranges = [q_ranges]
-    ims = np.array(np.zeros([len(q_ranges), data['radial_profile'][1].shape[0],
-                             data['radial_profile'][1].shape[1]]))
+    ims = np.array(
+        np.zeros(
+            [
+                len(q_ranges),
+                data["radial_profile"][1].shape[0],
+                data["radial_profile"][1].shape[1],
+            ]
+        )
+    )
 
     for i in range(0, len(q_ranges)):
-        idx = np.where(np.logical_and(data['radial_profile'][0] > q_ranges[i]
-                       [0], data['radial_profile'][0] < q_ranges[i][1]))[0]
-        ims[i] = data['radial_profile'][1][:, :, idx].sum(2)
+        idx = np.where(
+            np.logical_and(
+                data["radial_profile"][0] > q_ranges[i][0],
+                data["radial_profile"][0] < q_ranges[i][1],
+            )
+        )[0]
+        ims[i] = data["radial_profile"][1][:, :, idx].sum(2)
     return ims
 
 
-def remove_bckg(data, q_range, scanYX=None, plot_result=False, model='power'):
+def remove_bckg(data, q_range, scanYX=None, plot_result=False, model="power"):
     """
     Remove background from 4D-STEM dataset using a power law model.
 
@@ -460,32 +525,43 @@ def remove_bckg(data, q_range, scanYX=None, plot_result=False, model='power'):
     >>> data = merlin.io.read_h5_results("./merlin_data.hdf5")
     >>> corrected = merlin.processing.remove_bckg(data['radial_profile'], [0.5,1.3])
     """
+
     def _pl_func(x, A, r):
         return A * x**-r
 
     def _poly_func(x, a4, a3, a2, a1, c):
         return a4 * x**4 + a3 * x**3 + a2 * x**2 + a1 * x + c
 
-    xaxis = data['radial_profile'][0]
+    xaxis = data["radial_profile"][0]
     if scanYX is None:
-        yaxis = data['radial_profile'][1].sum((0, 1))
+        yaxis = data["radial_profile"][1].sum((0, 1))
     else:
-        yaxis = data['radial_profile'][1][scanYX[0], scanYX[1], :]
+        yaxis = data["radial_profile"][1][scanYX[0], scanYX[1], :]
     fit_range = [np.where(xaxis > q_range[0])[0][0], np.where(xaxis > q_range[1])[0][0]]
-    if model.lower() in ['power', 'pl']:
-        res, cov = optimize.curve_fit(_pl_func, xaxis[fit_range[0]:fit_range[1]], yaxis[fit_range[0]:fit_range[1]])
-        fit = _pl_func(xaxis[fit_range[0]:], res[0], res[1])
-    elif model.lower() in ['poly', ]:
-        res, cov = optimize.curve_fit(_poly_func, xaxis[fit_range[0]:fit_range[1]], yaxis[fit_range[0]:fit_range[1]])
-        fit = _poly_func(xaxis[fit_range[0]:], res[0], res[1], res[2], res[3], res[4])
+    if model.lower() in ["power", "pl"]:
+        res, cov = optimize.curve_fit(
+            _pl_func,
+            xaxis[fit_range[0] : fit_range[1]],
+            yaxis[fit_range[0] : fit_range[1]],
+        )
+        fit = _pl_func(xaxis[fit_range[0] :], res[0], res[1])
+    elif model.lower() in [
+        "poly",
+    ]:
+        res, cov = optimize.curve_fit(
+            _poly_func,
+            xaxis[fit_range[0] : fit_range[1]],
+            yaxis[fit_range[0] : fit_range[1]],
+        )
+        fit = _poly_func(xaxis[fit_range[0] :], res[0], res[1], res[2], res[3], res[4])
 
-    corrected = yaxis[fit_range[0]:] - fit
+    corrected = yaxis[fit_range[0] :] - fit
 
     if plot_result:
         plt.figure()
-        plt.plot(xaxis[fit_range[0]:], yaxis[fit_range[0]:], 'ro', label='Data')
-        plt.plot(xaxis[fit_range[0]:], fit, 'blue', label='Fit')
-        plt.plot(xaxis[fit_range[0]:], corrected, 'go', label='Corrected')
+        plt.plot(xaxis[fit_range[0] :], yaxis[fit_range[0] :], "ro", label="Data")
+        plt.plot(xaxis[fit_range[0] :], fit, "blue", label="Fit")
+        plt.plot(xaxis[fit_range[0] :], corrected, "go", label="Corrected")
         plt.legend()
 
     return corrected

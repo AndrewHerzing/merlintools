@@ -17,8 +17,8 @@ import glob
 import pandas as pd
 from merlintools.utils import get_calibration
 from merlintools.processing import radial_profile, shift_align
-import fpd.fpd_file as fpdf
-import fpd.fpd_processing as fpdp
+from merlintools.vendor.fpd import fpd_file as fpdf
+from merlintools.vendor.fpd import fpd_processing as fpdp
 from hyperspy.io import load
 import matplotlib.pyplot as plt
 

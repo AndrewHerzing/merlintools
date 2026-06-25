@@ -17,10 +17,10 @@ requires-python = ">=3.12, <3.13"
 dependencies = [
     "numpy",
     "hyperspy",
-    "fpd",
     "tqdm",
     "pyxem",
     "py4dstem",
+    "pandas",
 ]
 
 [tool.uv]
