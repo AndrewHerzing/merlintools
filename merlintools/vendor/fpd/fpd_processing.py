@@ -648,17 +648,17 @@ def sum_ax(data, axis=0, n=32, dtype=None, progress_bar=True):
             min_pix_mav = np.iinfo(data.dtype).min
             if min_pix_mav != 0:
                 # could be smarter here and use ints
-                rtn_dtype = np.float
+                rtn_dtype = float
             else:
                 max_new_val = max_pix_val * data.shape[axis]
                 bits = int(np.ceil(np.log2(max_new_val + 1)))
                 bits_aligned = int(2 ** (np.ceil(bits / 8 / 2)) * 8)
                 if bits_aligned > 64:
-                    rtn_dtype = np.float
+                    rtn_dtype = float
                 else:
                     rtn_dtype = "uint%d" % (bits_aligned)
         else:
-            rtn_dtype = np.float
+            rtn_dtype = float
     else:
         rtn_dtype = dtype
 
@@ -699,7 +699,7 @@ def sum_ax(data, axis=0, n=32, dtype=None, progress_bar=True):
 
 # --------------------------------------------------
 def synthetic_aperture(
-    shape, cyx, rio, sigma=1, dt=np.float, aaf=3, ds_method="rebin", norm=True
+    shape, cyx, rio, sigma=1, dt=float, aaf=3, ds_method="rebin", norm=True
 ):
     """
     DEPRECATED in v0.2.3. Use fpd.fpd_processing.virtual_apertures instead.
@@ -791,7 +791,7 @@ def synthetic_aperture(
         ri, ro = [t * aaf for t in rio]
         r = np.hypot(x - cx, y - cy)
         mi = np.logical_and(r >= ri, r < ro)
-        mi = gaussian_filter(mi.astype(np.float), sigma, order=0, mode="reflect")
+        mi = gaussian_filter(mi.astype(float), sigma, order=0, mode="reflect")
 
         if np.issubdtype(dt, float):
             mi = mi.astype(dt)
@@ -1003,7 +1003,7 @@ def synthetic_images(
 
 # --------------------------------------------------
 def virtual_apertures(
-    shape, cyx, rio, sigma=1, dt=np.float, aaf=3, ds_method="rebin", norm=True
+    shape, cyx, rio, sigma=1, dt=float, aaf=3, ds_method="rebin", norm=True
 ):
     """
     Create circular virtual apertures. Sub-pixel accurate with aaf>1.
@@ -1098,7 +1098,7 @@ def virtual_apertures(
         ri, ro = [t * aaf for t in rio]
         r = np.hypot(x - cx, y - cy)
         mi = np.logical_and(r >= ri, r < ro)
-        mi = gaussian_filter(mi.astype(np.float), sigma, order=0, mode="reflect")
+        mi = gaussian_filter(mi.astype(float), sigma, order=0, mode="reflect")
 
         if np.issubdtype(dt, float):
             mi = mi.astype(dt)
@@ -1630,9 +1630,9 @@ def find_circ_centre(
         import matplotlib as mpl
 
         mplv = mpl.__version__
-        from distutils.version import LooseVersion
+        from packaging.version import Version
 
-        if LooseVersion(mplv) >= LooseVersion("2.2.0"):
+        if Version(mplv) >= Version("2.2.0"):
             _ = kwd.pop("adjustable")
 
         f, (ax1, ax2, ax3) = plt.subplots(
@@ -1816,7 +1816,7 @@ def radial_profile(data, cyx, mask=None, r_nm_pp=None, plot=False, spf=1.0):
     im_shape = data.shape[-2:]
     y, x = np.indices(im_shape)
     r = np.hypot(y - cyx[0], x - cyx[1])
-    r = r.round(0).astype(np.int)  # need int for bincounting
+    r = r.round(0).astype(int)  # need int for bincounting
 
     if mask is not None:
         if spf > 1:
@@ -2036,7 +2036,7 @@ def radial_profiles(
     def _radial_profile_calc(im, detY, detX, cyx, mask, r_lim):
         y, x = np.indices([detY, detX])
         r = np.hypot(y - cyx[0], x - cyx[1])
-        r = r.round(0).astype(np.int)
+        r = r.round(0).astype(int)
 
         if mask is not None:
             r = r[mask]
@@ -2290,18 +2290,18 @@ def center_of_mass(
     cropped_im_shape, rebinf, rebinning, rii, rif, cii, cif = rtn
 
     if aperture is not None:
-        aperture = aperture[rii : rif + 1, cii : cif + 1].astype(np.float, copy=False)
+        aperture = aperture[rii : rif + 1, cii : cif + 1].astype(float, copy=False)
         if rebinning:
             ns = tuple([int(x / rebin) for x in aperture.shape])
             aperture = rebinA(aperture, *ns)
 
     r_if, c_if = _block_indices((scanY, scanX), (nr, nc))
-    com_im = np.zeros(nondet + (2,), dtype=np.float)
+    com_im = np.zeros(nondet + (2,), dtype=float)
     yi, xi = np.indices((detY, detX))
     yi = yi[::-1, ...]  # reverse order so increasing Y is up.
 
     yixi = np.concatenate((yi[..., None], xi[..., None]), 2)
-    yixi = yixi[rii : rif + 1, cii : cif + 1, :].astype(np.float)
+    yixi = yixi[rii : rif + 1, cii : cif + 1, :].astype(float)
     if rebinning:
         ns = tuple([int(x / rebin) for x in yixi.shape[:2]]) + yixi.shape[2:]
         yixi = rebinA(yixi, *ns)
@@ -2609,9 +2609,8 @@ def phase_correlation(
 
     """
     from skimage import __version__ as skiv
-    from distutils.version import LooseVersion
 
-    if LooseVersion(skiv) < LooseVersion("0.17.0"):
+    if Version(skiv) < Version("0.17.0"):
         from skimage.feature import register_translation as trans_func
     else:
         from skimage.registration import phase_cross_correlation as trans_func
@@ -2791,7 +2790,7 @@ def phase_correlation(
                 # gm is (n, detY, detX), with last 2 rebinned
 
                 # fft of processed grad
-                if parallel and LooseVersion(sp.__version__) >= LooseVersion("1.4.0"):
+                if parallel and Version(sp.__version__) >= Version("1.4.0"):
                     gm = fft_module.fft2(gm, axes=(-2, -1), workers=ncores)
                 else:
                     gm = fft_module.fft2(gm, axes=(-2, -1))

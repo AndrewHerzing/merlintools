@@ -16,9 +16,8 @@ from functools import partial
 import inspect
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from distutils.version import LooseVersion
 import logging
-from pkg_resources import parse_version
+from packaging.version import Version
 import io
 from tqdm import tqdm
 from itertools import product
@@ -46,9 +45,9 @@ _mpl_non_adjust = False
 import matplotlib as mpl
 
 _mplv = mpl.__version__
-from distutils.version import LooseVersion
+from packaging.version import Version
 
-if LooseVersion(_mplv) >= LooseVersion("2.2.0"):
+if Version(_mplv) >= Version("2.2.0"):
     _mpl_non_adjust = True
 
 
@@ -209,9 +208,9 @@ class Merlin_hdr_file_parser:
 
         # Check versions. Could write as dict if many versions.
         fmt_ver1 = (
-            parse_version(self._ver_str_min)
-            <= parse_version(self._ver_str)
-            <= parse_version(self._ver_str_max)
+            Version(self._ver_str_min)
+            <= Version(self._ver_str)
+            <= Version(self._ver_str_max)
         )
 
         fmt_ver0_string = "0.76"
@@ -593,7 +592,7 @@ class Merlin_binary_header_parser:
                 self.raw_mode = False
 
                 Threshold_keV = np.array(hv[14:22], dtype="f4")
-                DAC_val = np.array(hv[23:50], dtype="u1")
+                DAC_val = np.array(hv[23:50], dtype="u2")
 
         # these always exist
         self.bitdepth_data = bitdepth_data
@@ -908,8 +907,8 @@ def _create_emd(
     ds.attrs["name"] = data_name
     ds.attrs["units"] = data_units
     if im_class == True:
-        ds.attrs["CLASS"] = np.string_("IMAGE")
-        ds.attrs["IMAGE_VERSION"] = np.string_("1.2")
+        ds.attrs["CLASS"] = np.bytes_("IMAGE")
+        ds.attrs["IMAGE_VERSION"] = np.bytes_("1.2")
 
     # add axes
     dim_dataset_names = ["dim" + str(x + 1) for x in range(len(dim_names))]
@@ -1508,7 +1507,7 @@ class CubicImageInterpolator:
         self.xi = np.asarray(self.interp_inds).T
 
         # dummy values for initialisation
-        values = np.ones(self.points.shape[0], dtype=np.float)
+        values = np.ones(self.points.shape[0], dtype=float)
         self.ip = CloughTocher2DInterpolator(
             self.points, values, fill_value=np.nan, rescale=False
         )
@@ -3156,7 +3155,7 @@ def _check_fpd_file(
         if max_version is None:
             max_version = __version__
 
-        if LooseVersion(min_version) > LooseVersion(vs) > LooseVersion(max_version):
+        if Version(min_version) > Version(vs) > Version(max_version):
             # version understood
             if not silent:
                 print(
@@ -3175,7 +3174,7 @@ def _check_fpd_file(
         if max_version is None:
             max_version = PED_version_max
 
-        if LooseVersion(min_version) > LooseVersion(vs) > LooseVersion(max_version):
+        if Version(min_version) > Version(vs) > Version(max_version):
             # version understood
             if not silent:
                 print(
@@ -3646,8 +3645,8 @@ def fpd_to_hyperspy(fpg, fpd_check=True, assume_yes=False, group_names=None):
     """
     from hyperspy import __version__ as hsv
 
-    hs_lv = LooseVersion(hsv)
-    if (hs_lv > LooseVersion("1.5.2")) & (hs_lv < LooseVersion("1.7.0")):
+    hs_lv = Version(hsv)
+    if (hs_lv > Version("1.5.2")) & (hs_lv < Version("1.7.0")):
         m = """HyperSpy versions (1.5.2, 1.7.0) don't return the metadata needed by this function.
 Your current version is "%s". Try downgrading HyperSpy to version 1.5.2.
 See https://gitlab.com/fpdpy/fpd/-/issues/41 for details.""" % (hsv)
@@ -3673,7 +3672,7 @@ See https://gitlab.com/fpdpy/fpd/-/issues/41 for details.""" % (hsv)
         return indices
 
     hs_non_lazy = False
-    if hs_lv < LooseVersion("1.0.0"):
+    if hs_lv < Version("1.0.0"):
         hs_non_lazy = True
 
     if fpd_check:

@@ -69,7 +69,7 @@ class TestMIBConversion:
 class TestGetMicroscopeParameters:
     def test_tia_scope_parameters_filename(self):
         temp_dir = TemporaryDirectory()
-        h5filename = temp_dir.name + "tempfile.hdf5"
+        h5filename = os.path.join(temp_dir.name, "tempfile.hdf5")
         datadir = os.path.join(merlin_path, "tests", "test_data", "TIA-Scan")
         mib = glob.glob(datadir + "/*.mib")
         hdr = glob.glob(datadir + "/*.hdr")
@@ -84,7 +84,7 @@ class TestGetMicroscopeParameters:
 
     def test_tia_scope_parameters_h5(self):
         temp_dir = TemporaryDirectory()
-        h5filename = temp_dir.name + "tempfile.hdf5"
+        h5filename = os.path.join(temp_dir.name, "tempfile.hdf5")
         datadir = os.path.join(merlin_path, "tests", "test_data", "TIA-Scan")
         mib = glob.glob(datadir + "/*.mib")
         hdr = glob.glob(datadir + "/*.hdr")
@@ -100,7 +100,7 @@ class TestGetMicroscopeParameters:
 
     def test_tia_scope_parameters_nt(self):
         temp_dir = TemporaryDirectory()
-        h5filename = temp_dir.name + "tempfile.hdf5"
+        h5filename = os.path.join(temp_dir.name, "tempfile.hdf5")
         datadir = os.path.join(merlin_path, "tests", "test_data", "TIA-Scan")
         mib = glob.glob(datadir + "/*.mib")
         hdr = glob.glob(datadir + "/*.hdr")
@@ -116,7 +116,7 @@ class TestGetMicroscopeParameters:
 
     def test_dm_scope_parameters_filename(self):
         temp_dir = TemporaryDirectory()
-        h5filename = temp_dir.name + "tempfile.hdf5"
+        h5filename = os.path.join(temp_dir.name, "tempfile.hdf5")
         datadir = os.path.join(merlin_path, "tests", "test_data", "DM-Scan_ExtraFrames")
         mib = glob.glob(datadir + "/*.mib")
         hdr = glob.glob(datadir + "/*.hdr")
@@ -131,7 +131,7 @@ class TestGetMicroscopeParameters:
 
     def test_dm_scope_parameters_h5(self):
         temp_dir = TemporaryDirectory()
-        h5filename = temp_dir.name + "tempfile.hdf5"
+        h5filename = os.path.join(temp_dir.name, "tempfile.hdf5")
         datadir = os.path.join(merlin_path, "tests", "test_data", "DM-Scan_ExtraFrames")
         mib = glob.glob(datadir + "/*.mib")
         hdr = glob.glob(datadir + "/*.hdr")
@@ -147,7 +147,7 @@ class TestGetMicroscopeParameters:
 
     def test_dm_scope_parameters_nt(self):
         temp_dir = TemporaryDirectory()
-        h5filename = temp_dir.name + "tempfile.hdf5"
+        h5filename = os.path.join(temp_dir.name, "tempfile.hdf5")
         datadir = os.path.join(merlin_path, "tests", "test_data", "DM-Scan_ExtraFrames")
         mib = glob.glob(datadir + "/*.mib")
         hdr = glob.glob(datadir + "/*.hdr")
@@ -187,7 +187,7 @@ class TestHeaderParsing:
         assert type(header) is dict
         assert "TimeStamp" in header.keys()
         assert "SoftwareVersion" in header.keys()
-        assert np.int(header["TotalFrames"]) == 11007
+        assert int(header["TotalFrames"]) == 11007
 
     def test_mib_parser(self):
         """Parse MIB file."""
