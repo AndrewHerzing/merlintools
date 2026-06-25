@@ -20,6 +20,7 @@ dependencies = [
     "fpd",
     "tqdm",
     "pyxem",
+    "py4dstem",
 ]
 
 [tool.uv]
